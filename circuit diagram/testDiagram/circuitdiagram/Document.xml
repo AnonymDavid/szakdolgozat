@@ -1,0 +1,138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<circuit version="1.4" xmlns="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document">
+	<properties>
+		<width>480</width>
+		<height>300</height>
+	</properties>
+	<definitions>
+		<src col="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/components/common">
+			<add id="0" item="pushswitch" p4:guid="421694bf-755a-4d50-b2ca-7273216ca17d" p4:version="1.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="1" item="battery" p4:guid="8979c617-b041-4069-8769-0b76dc0e6c52" p4:version="1.2.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="2" item="led" p4:guid="50cc071a-0abc-4276-a7a0-a5bff9cc0374" p4:version="1.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="3" item="resistor" p4:guid="dab6d52b-51a0-49b0-bc40-3cda966148aa" p4:version="4.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="4" item="thyristor" p4:guid="c0d8a231-7ec7-4f6c-a25f-ece956c85ed4" p4:version="1.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+		</src>
+	</definitions>
+	<elements>
+		<c id="0" tp="{0}" x="440" y="180" o="v" sz="30" flp="false">
+			<prs>
+				<p k="t" v="Push" />
+				<p k="closed" v="False" />
+			</prs>
+			<cns>
+				<cn id="0" pt="a" />
+			</cns>
+		</c>
+		<w x="380" y="270" o="h" sz="60" flp="false" />
+		<w x="440" y="210" o="v" sz="60" flp="false" />
+		<w x="440" y="140" o="v" sz="40" flp="false" />
+		<w x="380" y="140" o="h" sz="60" flp="false" />
+		<c id="1" tp="{1}" x="70" y="140" o="v" sz="10" flp="false">
+			<prs>
+				<p k="voltage" v="4" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="Battery" />
+			</prs>
+			<cns>
+				<cn id="1" pt="pos" />
+				<cn id="0" pt="neg" />
+			</cns>
+		</c>
+		<w x="70" y="80" o="v" sz="60" flp="false" />
+		<w x="70" y="150" o="v" sz="120" flp="false" />
+		<w x="70" y="270" o="h" sz="310" flp="false" />
+		<w x="380" y="210" o="v" sz="60" flp="false" />
+		<c id="2" tp="{2}" x="330" y="60" o="h" sz="30" flp="false">
+			<prs>
+				<p k="t" v="LED" />
+			</prs>
+			<cns>
+				<cn id="2" pt="an" />
+				<cn id="0" pt="cat" />
+			</cns>
+		</c>
+		<w x="380" y="60" o="v" sz="110" flp="false" />
+		<w x="360" y="60" o="h" sz="20" flp="false" />
+		<w x="300" y="90" o="h" sz="80" flp="false" />
+		<w x="180" y="90" o="h" sz="70" flp="false" />
+		<w x="260" y="60" o="h" sz="70" flp="false" />
+		<w x="180" y="60" o="h" sz="20" flp="false" />
+		<w x="180" y="60" o="v" sz="10" flp="false" />
+		<c id="3" tp="{3}" x="250" y="90" o="h" sz="50" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="150" />
+				<p k="showResistance" v="True" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns>
+				<cn id="0" pt="b" />
+				<cn id="1" pt="a" />
+			</cns>
+		</c>
+		<c id="4" tp="{3}" x="200" y="60" o="h" sz="60" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="1000" />
+				<p k="showResistance" v="True" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns>
+				<cn id="2" pt="b" />
+				<cn id="1" pt="a" />
+			</cns>
+		</c>
+		<c id="5" tp="{4}" x="380" y="170" o="v" sz="40" flp="false">
+			<prs>
+				<p k="style" v="Full" />
+			</prs>
+			<cns>
+				<cn id="0" pt="cat" />
+				<cn id="0" pt="an" />
+				<cn id="3" pt="gate" />
+			</cns>
+		</c>
+		<w x="180" y="210" o="h" sz="180" flp="false" />
+		<w x="180" y="210" o="v" sz="10" flp="false" />
+		<c id="6" tp="{3}" x="180" y="210" o="v" sz="60" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="146" />
+				<p k="showResistance" v="True" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns>
+				<cn id="0" pt="b" />
+				<cn id="3" pt="a" />
+			</cns>
+		</c>
+		<c id="7" tp="{0}" x="180" y="110" o="v" sz="30" flp="false">
+			<prs>
+				<p k="t" v="Push" />
+				<p k="closed" v="False" />
+			</prs>
+			<cns>
+				<cn id="1" pt="a" />
+			</cns>
+		</c>
+		<w x="180" y="60" o="v" sz="50" flp="false" />
+		<c id="8" tp="{3}" x="180" y="140" o="v" sz="70" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="470" />
+				<p k="showResistance" v="True" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns>
+				<cn id="3" pt="b" />
+				<cn id="1" pt="a" />
+			</cns>
+		</c>
+		<w x="70" y="80" o="h" sz="110" flp="false" />
+	</elements>
+</circuit>
