@@ -1,0 +1,25 @@
+logic gates 2
+	3féle primitív: vonal, görbék, kör
+	ezeket keresi, előre meghat. szabályok alapján dönt
+	diagram description language!
+	előny: primitívek keresése
+	hátrány: új elem -> szabály létrehozás kell
+
+
+topology based loop
+	loop
+		komponensek loopjainak vizsgálata
+		vonalak által létrejött hamis loopok szűrése
+		feature detection
+		loop karakterisztika kivonása
+	loop-free
+		hasonló az enyémhez
+		ground, condenser, resistor
+		key feature pointok alapján (sarok-, endpoint) + line detection
+
+
+hand drawn optical
+	moment extraction
+	ANN
+	CNN jobb, benne van már az extraction meg ilyenek
+	
