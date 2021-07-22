@@ -352,12 +352,8 @@ for line in vertical:
     if not samePointP2:
         filteredEndpoints.append(Endpoint(line.p2, Orientation.VERTICAL))
 
-for ep in filteredEndpoints:
-    i = 0
-    while i < len(intersections) and not isSamePoint(ep.point, intersections[i].point):
-        i += 1
-    if i < len(intersections):
-        cv2.circle(img, ep.point, 30, (0,255,0), thickness=-1)
+# CLASSIFY every INTERSECTION if CONNECTION (filled circle in the middle) or PASSTHROUGH LINES (no filled circle)
+
 
 
 
