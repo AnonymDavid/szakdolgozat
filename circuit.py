@@ -6,6 +6,8 @@ from enum import Enum
 import math
 import sys
 import os.path
+import random
+from datetime import datetime
 
 # temporary imports
 import time
@@ -361,7 +363,7 @@ for line in vertical:
 #       disadv.: requires time, resource, not 100%
 
 # for l in lines:
-#     cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 5)
+#     cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 2)
 # for ep in endpoints:
 #     cv2.circle(img, (ep.point.x, ep.point.y), 12, (255,0,255), -1)
 
@@ -373,14 +375,34 @@ for line in vertical:
 
 # TODO line width
 
+random.seed(datetime.now())
+line = lines[random.randint(0, len(lines) - 1)]
+line_angle = getLineAngle(line)
 
-warp_pt1 = np.float32([[710,313], [1770, 312], [680, 2180], [1750, 2200]])
-height, width = 2154, 1060
-warp_pt2 = np.float32([[0,0], [width, 0], [0, height], [width, height]])
+
+line_LP, line_RP = [line.p1, line.p2] if line.p1.x < line.p2.x else [line.p2, line.p1]
+
+slope = abs((line_RP.y - line_LP.y) / (line_RP.x - line_LP.x))
+
+line_T = line_LP.y - slope
+line_B = line_RP.y + slope
+line_L = line_LP.x - slope
+line_R = line_RP.x + slope
+
+# TL TR BL BR
+warp_pt1 = np.float32( [[ line_L, line_T ], [ line_R, line_T ], [ line_L, line_B ], [ line_R, line_B ]] )
+height, width = line_B - line_T, line_R - line_L
+warp_pt2 = np.float32( [[0,0], [width, 0], [0, height], [width, height]] )
 mtx = cv2.getPerspectiveTransform(warp_pt1, warp_pt2)
 output = cv2.warpPerspective(img, mtx, (width, height))
 
-cv2.imshow("warp", resizeImage(output, PICTURE_SCALE)
+# angle = line_angle - (int)(line_angle / 90)*90
+# if (angle > 45):
+#     angle = angle - 90
+
+# cv2.imshow("warp_before", resizeImage(output, PICTURE_SCALE))
+# rotateImage(output, angle)
+cv2.imshow("warp", resizeImage(output, PICTURE_SCALE))
 
 
 
@@ -414,11 +436,9 @@ print("\nLines: {}\nIntersections: {}\nEndpoints: {}\nFiltered endpoints: {}".fo
 # else:
 #     print("resistor")
 
-img    = resizeImage(img, PICTURE_SCALE))
-thresh = resizeImage(thresh, PICTURE_SCALE))
 
-cv2.imshow("img", img)
-cv2.imshow("thresh", thresh)
+cv2.imshow("img", resizeImage(img, PICTURE_SCALE))
+cv2.imshow("thresh", resizeImage(thresh, PICTURE_SCALE))
 
 t2 = time.perf_counter()
 
