@@ -124,6 +124,9 @@ def rotateImage(image, angle: int):
     rotated_image = cv2.warpAffine(image, rotated_image, (bound_w, bound_h))
 
     return rotated_image
+
+def resizeImage(src, percent: int):
+    return cv2.resize(src, (int(src.shape[1]*percent/100), int(src.shape[0]*percent/100)))
     
 
 
@@ -175,102 +178,98 @@ for i in range(cntCounter):
 # ROTATE VIA LONGEST LINES AVG ANGLE
 # TODO: houghlinesp parameters with percent
 linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, 100, 0))
-if linesP is not None:
-    linesP.sort(key=lambda l: getLineLength(convertHoughToLine(l)), reverse=True )
-    
-    avgAngleDiff = 0
-    linesP = convertHoughToLineList(linesP)
+if linesP is None:
+    exit("No lines detected")
 
-    rotatelines = []
-    checkedLineCount = 1
-    differentLineCount = 1
-    rotatelines.append(linesP[0])
+linesP.sort(key=lambda l: getLineLength(convertHoughToLine(l)), reverse=True )
 
-    while checkedLineCount < len(linesP) and differentLineCount < LINE_COUNT_CHECK_FOR_ROTATION:
-        line = linesP[checkedLineCount]
-        i = 1
-        while i < differentLineCount and not isSameLine(line, rotatelines[i]):
-            i += 1
-        if (i >= differentLineCount):
-            angle = getLineAngle(line)
-            angle = angle - (int)(angle / 90)*90
-            if (angle > 45):
-                angle = angle - 90
-            
-            currentDiffWithAvg = abs((avgAngleDiff/differentLineCount) - angle)
-            
-            if abs(currentDiffWithAvg - int(currentDiffWithAvg / 90) * 90) <= 20:
-                avgAngleDiff += angle
-                rotatelines.append(line)
-                differentLineCount += 1
+avgAngleDiff = 0
+linesP = convertHoughToLineList(linesP)
 
-        checkedLineCount += 1
+rotatelines = []
+checkedLineCount = 1
+differentLineCount = 1
+rotatelines.append(linesP[0])
+
+while checkedLineCount < len(linesP) and differentLineCount < LINE_COUNT_CHECK_FOR_ROTATION:
+    line = linesP[checkedLineCount]
+    i = 1
+    while i < differentLineCount and not isSameLine(line, rotatelines[i]):
+        i += 1
+    if (i >= differentLineCount):
+        angle = getLineAngle(line)
+        angle = angle - (int)(angle / 90)*90
+        if (angle > 45):
+            angle = angle - 90
         
-    avgAngleDiff /= differentLineCount
+        currentDiffWithAvg = abs((avgAngleDiff/differentLineCount) - angle)
+        
+        if abs(currentDiffWithAvg - int(currentDiffWithAvg / 90) * 90) <= 20:
+            avgAngleDiff += angle
+            rotatelines.append(line)
+            differentLineCount += 1
 
-    thresh = rotateImage(thresh, avgAngleDiff)
-    gray = rotateImage(gray, avgAngleDiff)
-    img = rotateImage(img, avgAngleDiff)
+    checkedLineCount += 1
+    
+avgAngleDiff /= differentLineCount
+
+thresh = rotateImage(thresh, avgAngleDiff)
+gray = rotateImage(gray, avgAngleDiff)
+img = rotateImage(img, avgAngleDiff)
 
 # TODO: houghlinesp parameters with percent
 linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, 100, 0))
-if linesP is not None:
-    linesP = convertHoughToLineList(linesP)
+if linesP is None:
+    exit("No lines detected")
 
-    horizontal = []
-    vertical = []
-    for line in linesP:
-        line_angle = getLineAngle(line)
-        if abs(line_angle - (round(line_angle / 180) * 180)) < LINE_SEARCH_ANGLE_THRESHOLD:
-            line_left, line_right = ((line.p1, line.p2) if line.p1.x < line.p2.x else (line.p2, line.p1))
-            lineC = 0
-            while lineC < len(horizontal):
-                hl_left, hl_right = ((horizontal[lineC].p1, horizontal[lineC].p2) if horizontal[lineC].p1.x < horizontal[lineC].p2.x else (horizontal[lineC].p2, horizontal[lineC].p1))
-                if line_left.x <= hl_right.x and line_right.x >= hl_left.x:
-                    slope = (hl_right.y - hl_left.y) / (hl_right.x - hl_left.x)
+linesP = convertHoughToLineList(linesP)
+
+horizontal = []
+vertical = []
+for line in linesP:
+    line_angle = getLineAngle(line)
+    if abs(line_angle - (round(line_angle / 180) * 180)) < LINE_SEARCH_ANGLE_THRESHOLD:
+        line_left, line_right = ((line.p1, line.p2) if line.p1.x < line.p2.x else (line.p2, line.p1))
+        lineC = 0
+        while lineC < len(horizontal):
+            hl_left, hl_right = ((horizontal[lineC].p1, horizontal[lineC].p2) if horizontal[lineC].p1.x < horizontal[lineC].p2.x else (horizontal[lineC].p2, horizontal[lineC].p1))
+            if line_left.x <= hl_right.x and line_right.x >= hl_left.x:
+                slope = (hl_right.y - hl_left.y) / (hl_right.x - hl_left.x)
+    
+                hl_middle_x = round(hl_left.x + (hl_right.x - hl_left.x) / 2)
+                hl_middle_y = round(hl_left.y + (hl_middle_x - hl_left.x) * slope)
+                hl_middle_y_estimate = round(line_left.y + (hl_middle_x - line_left.x) * slope)
+
+                if isSamePoint(Point(0, hl_middle_y), Point(0, hl_middle_y_estimate)):
+                    horizontal[lineC] = Line((line_left if line_left.x < hl_left.x else hl_left), (line_right if line_right.x > hl_right.x else hl_right))
+                    break
+
+            lineC += 1
         
-                    hl_middle_x = round(hl_left.x + (hl_right.x - hl_left.x) / 2)
-                    hl_middle_y = round(hl_left.y + (hl_middle_x - hl_left.x) * slope)
-                    hl_middle_y_estimate = round(line_left.y + (hl_middle_x - line_left.x) * slope)
+        if lineC >= len(horizontal):
+            horizontal.append(line)
+    elif abs(line_angle - (round(line_angle / 90) * 90)) < LINE_SEARCH_ANGLE_THRESHOLD:
+        line_top, line_bottom = ((line.p1, line.p2) if line.p1.y < line.p2.y else (line.p2, line.p1))
+        lineC = 0
+        while lineC < len(vertical):
+            hl_top, hl_bottom = ((vertical[lineC].p1, vertical[lineC].p2) if vertical[lineC].p1.y < vertical[lineC].p2.y else (vertical[lineC].p2, vertical[lineC].p1))
+            if line_top.y <= hl_bottom.y and line_bottom.y >= hl_top.y:
+                slope = (hl_bottom.x - hl_top.x) / (hl_bottom.y - hl_top.y)
+    
+                hl_middle_y = round(hl_top.y + (hl_bottom.y - hl_top.y) / 2)
+                hl_middle_x = round(hl_top.x + (hl_middle_y - hl_top.y) * slope)
+                hl_middle_x_estimate = round(line_top.x + (hl_middle_y - line_top.y) * slope)
 
-                    if isSamePoint(Point(0, hl_middle_y), Point(0, hl_middle_y_estimate)):
-                        horizontal[lineC] = Line((line_left if line_left.x < hl_left.x else hl_left), (line_right if line_right.x > hl_right.x else hl_right))
-                        break
+                if isSamePoint(Point(hl_middle_x, 0), Point(hl_middle_x_estimate, 0)):
+                    vertical[lineC] = Line((line_top if line_top.y < hl_top.y else hl_top), (line_bottom if line_bottom.y > hl_bottom.y else hl_bottom))
+                    break
 
-                lineC += 1
-            
-            if lineC >= len(horizontal):
-                horizontal.append(line)
-        elif abs(line_angle - (round(line_angle / 90) * 90)) < LINE_SEARCH_ANGLE_THRESHOLD:
-            line_top, line_bottom = ((line.p1, line.p2) if line.p1.y < line.p2.y else (line.p2, line.p1))
-            lineC = 0
-            while lineC < len(vertical):
-                hl_top, hl_bottom = ((vertical[lineC].p1, vertical[lineC].p2) if vertical[lineC].p1.y < vertical[lineC].p2.y else (vertical[lineC].p2, vertical[lineC].p1))
-                if line_top.y <= hl_bottom.y and line_bottom.y >= hl_top.y:
-                    slope = (hl_bottom.x - hl_top.x) / (hl_bottom.y - hl_top.y)
+            lineC += 1
         
-                    hl_middle_y = round(hl_top.y + (hl_bottom.y - hl_top.y) / 2)
-                    hl_middle_x = round(hl_top.x + (hl_middle_y - hl_top.y) * slope)
-                    hl_middle_x_estimate = round(line_top.x + (hl_middle_y - line_top.y) * slope)
-
-                    if isSamePoint(Point(hl_middle_x, 0), Point(hl_middle_x_estimate, 0)):
-                        vertical[lineC] = Line((line_top if line_top.y < hl_top.y else hl_top), (line_bottom if line_bottom.y > hl_bottom.y else hl_bottom))
-                        break
-
-                lineC += 1
-            
-            if lineC >= len(vertical):
-                vertical.append(line)
+        if lineC >= len(vertical):
+            vertical.append(line)
 
 lines = horizontal + vertical
-
-
-# TODO:  #######################################################################
-# TODO:  #                                                                     #
-# TODO:  #   TEST KERAS WITH REGULAR INTERSECTION AND CONNECTED INTERSECTION   #
-# TODO:  #                                                                     #
-# TODO:  #######################################################################
-
 
 # FIND INTERSECTIONS
 intersections = []
@@ -352,10 +351,46 @@ for line in vertical:
     if not samePointP2:
         filteredEndpoints.append(Endpoint(line.p2, Orientation.VERTICAL))
 
+# TODO INTERSECTION CLASSIFICATION
 # CLASSIFY every INTERSECTION if CONNECTION (filled circle in the middle) or PASSTHROUGH LINES (no filled circle)
+# Method 1:
+#       erode, something in the middle => conn. else pass
+#       disadv.: not filled conn. circle => wwrong recog.
+# Method 2:
+#       rotate, affine perfect picture => horiz, vert filters; something in the middle => conn. else pass
+#       disadv.: requires time, resource, not 100%
+
+# for l in lines:
+#     cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 5)
+# for ep in endpoints:
+#     cv2.circle(img, (ep.point.x, ep.point.y), 12, (255,0,255), -1)
 
 
 
+
+
+
+
+# TODO line width
+
+
+warp_pt1 = np.float32([[710,313], [1770, 312], [680, 2180], [1750, 2200]])
+height, width = 2154, 1060
+warp_pt2 = np.float32([[0,0], [width, 0], [0, height], [width, height]])
+mtx = cv2.getPerspectiveTransform(warp_pt1, warp_pt2)
+output = cv2.warpPerspective(img, mtx, (width, height))
+
+cv2.imshow("warp", resizeImage(output, PICTURE_SCALE)
+
+
+
+
+
+
+
+
+
+# TODO: maybe useful: Identify TRUE ENDPOINTS (line from one direction, nothing from the others)
 
 
 print("\nLines: {}\nIntersections: {}\nEndpoints: {}\nFiltered endpoints: {}".format(
@@ -364,15 +399,6 @@ print("\nLines: {}\nIntersections: {}\nEndpoints: {}\nFiltered endpoints: {}".fo
 
 # for ep in endpoints:
 #     cv2.circle(img, ep.point, 10, (255,0,255), thickness=-1)
-
-
-
-
-# TODO:
-#   store if ep is horizontal/vertical
-#   check for another ep in the same vector
-#   if found    -> cut out square with a = distance
-#   else        -> find nearest ep -> square with a = distance + C (constans)
 
 
 
@@ -388,11 +414,11 @@ print("\nLines: {}\nIntersections: {}\nEndpoints: {}\nFiltered endpoints: {}".fo
 # else:
 #     print("resistor")
 
-img    = cv2.resize(img, (int(img.shape[1]*PICTURE_SCALE/100), int(img.shape[0]*PICTURE_SCALE/100)))
-thresh = cv2.resize(thresh, (int(thresh.shape[1]*PICTURE_SCALE/100), int(thresh.shape[0]*PICTURE_SCALE/100)))
+img    = resizeImage(img, PICTURE_SCALE))
+thresh = resizeImage(thresh, PICTURE_SCALE))
 
 cv2.imshow("img", img)
-# cv2.imshow("thresh", thresh)
+cv2.imshow("thresh", thresh)
 
 t2 = time.perf_counter()
 
