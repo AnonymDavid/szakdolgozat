@@ -353,6 +353,7 @@ for line in vertical:
     if not samePointP2:
         filteredEndpoints.append(Endpoint(line.p2, Orientation.VERTICAL))
 
+
 # TODO INTERSECTION CLASSIFICATION
 # CLASSIFY every INTERSECTION if CONNECTION (filled circle in the middle) or PASSTHROUGH LINES (no filled circle)
 # Method 1:
@@ -372,26 +373,110 @@ for line in vertical:
 
 
 
+# SKELETONIZATION
+
+temptresh = thresh.copy()
+
+size = np.size(temptresh)
+skel = np.zeros(temptresh.shape, np.uint8)
+
+# Get a Cross Shaped Kernel
+element = cv2.getStructuringElement(cv2.MORPH_CROSS, (3,3))
+
+# Repeat steps 2-4
+while True:
+    #Step 2: Open the image
+    open = cv2.morphologyEx(temptresh, cv2.MORPH_OPEN, element)
+    #Step 3: Substract open from the original image
+    temp = cv2.subtract(temptresh, open)
+    #Step 4: Erode the original image and refine the skeleton
+    eroded = cv2.erode(temptresh, element)
+    skel = cv2.bitwise_or(skel,temp)
+    temptresh = eroded.copy()
+    # Step 5: If there are no white pixels left ie.. the image has been completely eroded, quit the loop
+    if cv2.countNonZero(temptresh)==0:
+        break
+
+# Displaying the final skeleton
+cv2.imshow("Skeleton",resizeImage(skel, PICTURE_SCALE))
+
+
+
+
+
+
+# CONNECTED COMPONENTS
+
+
+# findAreaTempImg = 255 - thresh
+
+# # finding areas
+# num_labels, labels_im = cv2.connectedComponents(findAreaTempImg)
+
+# areas = []
+
+# for label in range(1,num_labels):
+#     # create mask from area
+#     mask = np.zeros((img.shape[0],img.shape[1]), dtype=np.uint8)
+#     mask[labels_im == label] = 255
+    
+#     contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+#     cnt = contours[0]
+    
+#     # figuring out shapes
+#     peri = cv2.arcLength(cnt, True)
+#     approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
+    
+#     x, y, w, h = cv2.boundingRect(approx)
+    
+#     areas.append([x,y,w,h])
+    
+#     # if two areas overlap, delete the bigger (filter out ares where components and lines enclosed an area)
+#     for i in range(len(areas) - 1):
+#         if (x <= areas[i][0]+areas[i][2]) and (y <= areas[i][1]+areas[i][3]) and (x+w >= areas[i][0]) and (y+h >= areas[i][1]):
+#             if (w*h < areas[i][2]*areas[i][3]):
+#                 del(areas[i])
+#             else:
+#                 del(areas[-1])
+#             break
+
+# for area in areas:
+#     cv2.rectangle(img, (area[0], area[1]), (area[0]+area[2], area[1]+area[3]), (0,0,255), 8)
+
+
+
+
+
 
 # TODO line width
-
+'''
 random.seed(datetime.now())
 line = lines[random.randint(0, len(lines) - 1)]
 line_angle = getLineAngle(line)
-
+cv2.line(img, (line.p1.x, line.p1.y), (line.p2.x, line.p2.y), (255,0,255), 10)
 
 line_LP, line_RP = [line.p1, line.p2] if line.p1.x < line.p2.x else [line.p2, line.p1]
+line_TP, line_BP = [line.p1, line.p2] if line.p1.y < line.p2.y else [line.p2, line.p1]
 
 slope = abs((line_RP.y - line_LP.y) / (line_RP.x - line_LP.x))
 
-line_T = line_LP.y - slope
-line_B = line_RP.y + slope
-line_L = line_LP.x - slope
-line_R = line_RP.x + slope
+angle = line_angle - (int)(line_angle / 90)*90 + 0.01
+if (angle > 45):
+    angle = angle - 90
+
+addHorizontal = abs(POINT_SIMILARITY_COMPARE_AREA_RADIUS / math.cos(angle)) # TODO: THIS IS JUST PURE $#!T
+addVertical = abs(POINT_SIMILARITY_COMPARE_AREA_RADIUS / math.sin(angle))
+
+line_T = int(line_TP.y - addVertical)
+line_B = int(line_BP.y + addVertical)
+line_L = int(line_LP.x - addHorizontal)
+line_R = int(line_RP.x + addHorizontal)
 
 # TL TR BL BR
 warp_pt1 = np.float32( [[ line_L, line_T ], [ line_R, line_T ], [ line_L, line_B ], [ line_R, line_B ]] )
 height, width = line_B - line_T, line_R - line_L
+print(width, height)
 warp_pt2 = np.float32( [[0,0], [width, 0], [0, height], [width, height]] )
 mtx = cv2.getPerspectiveTransform(warp_pt1, warp_pt2)
 output = cv2.warpPerspective(img, mtx, (width, height))
@@ -404,7 +489,7 @@ output = cv2.warpPerspective(img, mtx, (width, height))
 # rotateImage(output, angle)
 cv2.imshow("warp", resizeImage(output, PICTURE_SCALE))
 
-
+'''
 
 
 
