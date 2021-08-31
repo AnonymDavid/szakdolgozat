@@ -89,10 +89,29 @@
 
 
 # ==========================================================================================================================
-# 3 WAY INTERSECTION
+# SKELETONIZATION
 
-# @dataclass
-# class Intersection3way:
-#     point: Point
-#     lineCount: int
-#     orientation: Orientation
+# temptresh = thresh.copy()
+
+# size = np.size(temptresh)
+# skel = np.zeros(temptresh.shape, np.uint8)
+
+# # Get a Cross Shaped Kernel
+# element = cv2.getStructuringElement(cv2.MORPH_CROSS, (3,3))
+
+# # Repeat steps 2-4
+# while True:
+#     #Step 2: Open the image
+#     open = cv2.morphologyEx(temptresh, cv2.MORPH_OPEN, element)
+#     #Step 3: Substract open from the original image
+#     temp = cv2.subtract(temptresh, open)
+#     #Step 4: Erode the original image and refine the skeleton
+#     eroded = cv2.erode(temptresh, element)
+#     skel = cv2.bitwise_or(skel,temp)
+#     temptresh = eroded.copy()
+#     # Step 5: If there are no white pixels left ie.. the image has been completely eroded, quit the loop
+#     if cv2.countNonZero(temptresh)==0:
+#         break
+
+# # Displaying the final skeleton
+# cv2.imshow("Skeleton",resizeImage(skel, PICTURE_SCALE))

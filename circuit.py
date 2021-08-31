@@ -1,5 +1,5 @@
 import numpy as np
-from cv2 import cv2
+import cv2
 from dataclasses import dataclass
 from typing import List, NamedTuple
 from enum import Enum
@@ -9,6 +9,8 @@ import os.path
 import random
 from datetime import datetime
 
+from tensorflow import keras
+
 # temporary imports
 import time
 
@@ -17,7 +19,7 @@ from numpy.matrixlib.defmatrix import matrix
 
 # ----- CONSTANTS ----- TODO: all should be percent?
 CNT_DELETE_PERCENT = 15
-POINT_SIMILARITY_COMPARE_AREA_RADIUS = 40
+POINT_SIMILARITY_COMPARE_AREA_RADIUS = 10
 LINE_COUNT_CHECK_FOR_ROTATION = 50
 LINE_SEARCH_ANGLE_THRESHOLD = 5 # degrees, both ways
 LINE_CHECK_SIMILARITY_THRESHOLD = 5
@@ -146,40 +148,45 @@ if not os.path.isfile(str(sys.argv[1])):
 
 img = cv2.imread(sys.argv[1])
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+gray = cv2.medianBlur(gray, 7)
+
 thresh = cv2.threshold(gray, 110, 255, cv2.THRESH_BINARY)[1]
 
 thresh = 255 - thresh
 
-# REMOVING TEXTS
-contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (5,5)), iterations=3)
 
-contourSizes = []
+# # REMOVING TEXTS
+# contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-maxContour = 0
-cntCounter = 0
+# contourSizes = []
 
-for cnt in contours:
-    peri = cv2.arcLength(cnt, True)
-    approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
+# maxContour = 0
+# cntCounter = 0
+
+# for cnt in contours:
+#     peri = cv2.arcLength(cnt, True)
+#     approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
     
-    x, y, w, h = cv2.boundingRect(approx)
+#     x, y, w, h = cv2.boundingRect(approx)
 
-    contourSizes.append([cnt, w, h])
+#     contourSizes.append([cnt, w, h])
 
-    if contourSizes[maxContour][1]*contourSizes[maxContour][2] < contourSizes[cntCounter][1]*contourSizes[cntCounter][2]:
-        maxContour = cntCounter
+#     if contourSizes[maxContour][1]*contourSizes[maxContour][2] < contourSizes[cntCounter][1]*contourSizes[cntCounter][2]:
+#         maxContour = cntCounter
 
-    cntCounter += 1
+#     cntCounter += 1
 
 
-for i in range(cntCounter):
-    if contourSizes[i][1] < (contourSizes[maxContour][1] * CNT_DELETE_PERCENT / 100) and contourSizes[i][2] < (contourSizes[maxContour][2] * CNT_DELETE_PERCENT / 100):
-        cv2.drawContours(thresh, [contourSizes[i][0]], 0, (0), -1)
+# for i in range(cntCounter):
+#     if contourSizes[i][1] < (contourSizes[maxContour][1] * CNT_DELETE_PERCENT / 100) and contourSizes[i][2] < (contourSizes[maxContour][2] * CNT_DELETE_PERCENT / 100):
+#         cv2.drawContours(thresh, [contourSizes[i][0]], 0, (0), -1)
 
 
 # ROTATE VIA LONGEST LINES AVG ANGLE
-# TODO: houghlinesp parameters with percent
-linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, 100, 0))
+linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, 50, 0))
+
 if linesP is None:
     exit("No lines detected")
 
@@ -220,7 +227,7 @@ gray = rotateImage(gray, avgAngleDiff)
 img = rotateImage(img, avgAngleDiff)
 
 # TODO: houghlinesp parameters with percent
-linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, 100, 0))
+linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, 10, 0))
 if linesP is None:
     exit("No lines detected")
 
@@ -274,36 +281,36 @@ for line in linesP:
 lines = horizontal + vertical
 
 # FIND INTERSECTIONS
-intersections = []
+# intersections = []
 
-for line in linesP:
-    Icontains1 = False # line first point
-    Icontains2 = False # line second point
-    for intersec in intersections:
-        if (not Icontains1) and isSamePoint(line.p1, intersec.point):
-            Icontains1 = True
-        if (not Icontains2) and isSamePoint(line.p2, intersec.point):
-            Icontains2 = True
+# for line in linesP:
+#     Icontains1 = False # line first point
+#     Icontains2 = False # line second point
+#     for intersec in intersections:
+#         if (not Icontains1) and isSamePoint(line.p1, intersec.point):
+#             Icontains1 = True
+#         if (not Icontains2) and isSamePoint(line.p2, intersec.point):
+#             Icontains2 = True
     
-    intersectCount1 = 0 # line first point
-    intersectCount2 = 0 # line second point
-    for line2 in lines:
-        if line != line2:
-            if (not Icontains1):
-                if isSamePoint(line.p1,line2.p1):
-                    intersectCount1 += 1
-                elif isSamePoint(line.p1,line2.p2):
-                    intersectCount1 += 1
-            if (not Icontains2):
-                if isSamePoint(line.p2,line2.p1):
-                    intersectCount2 += 1
-                elif isSamePoint(line.p2,line2.p2):
-                    intersectCount2 += 1
+#     intersectCount1 = 0 # line first point
+#     intersectCount2 = 0 # line second point
+#     for line2 in lines:
+#         if line != line2:
+#             if (not Icontains1):
+#                 if isSamePoint(line.p1,line2.p1):
+#                     intersectCount1 += 1
+#                 elif isSamePoint(line.p1,line2.p2):
+#                     intersectCount1 += 1
+#             if (not Icontains2):
+#                 if isSamePoint(line.p2,line2.p1):
+#                     intersectCount2 += 1
+#                 elif isSamePoint(line.p2,line2.p2):
+#                     intersectCount2 += 1
     
-    if intersectCount1 > 2:
-        intersections.append(Intersection(line.p1, intersectCount1))
-    if intersectCount2 > 2:
-        intersections.append(Intersection(line.p2, intersectCount2))
+#     if intersectCount1 > 2:
+#         intersections.append(Intersection(line.p1, intersectCount1))
+#     if intersectCount2 > 2:
+#         intersections.append(Intersection(line.p2, intersectCount2))
 
 
 endpoints = []
@@ -313,101 +320,22 @@ for line in horizontal:
     endpoints.append(Endpoint(line.p1, Orientation.HORIZONTAL))
     endpoints.append(Endpoint(line.p2, Orientation.HORIZONTAL))
 
-    samePointP1 = False
-    samePointP2 = False
-    i = 0
-    while i < len(filteredEndpoints) and (not samePointP1 or not samePointP2):
-        if isSamePoint(filteredEndpoints[i].point, line.p1):
-            samePointP1 = True
-
-        if isSamePoint(filteredEndpoints[i].point, line.p2):
-            samePointP2 = True
-
-        i += 1
-
-    if not samePointP1:    
-        filteredEndpoints.append(Endpoint(line.p1, Orientation.HORIZONTAL))
-    
-    if not samePointP2:
-        filteredEndpoints.append(Endpoint(line.p2, Orientation.HORIZONTAL))
-
 for line in vertical:
     endpoints.append(Endpoint(line.p1, Orientation.VERTICAL))
     endpoints.append(Endpoint(line.p2, Orientation.VERTICAL))
-    
-    samePointP1 = False
-    samePointP2 = False
-    i = 0
-    while i < len(filteredEndpoints) and (not samePointP1 or not samePointP2):
-        if isSamePoint(filteredEndpoints[i].point, line.p1):
-            samePointP1 = True
-
-        if isSamePoint(filteredEndpoints[i].point, line.p2):
-            samePointP2 = True
-
-        i += 1
-
-    if not samePointP1:    
-        filteredEndpoints.append(Endpoint(line.p1, Orientation.VERTICAL))
-    
-    if not samePointP2:
-        filteredEndpoints.append(Endpoint(line.p2, Orientation.VERTICAL))
 
 
-# TODO INTERSECTION CLASSIFICATION
-# CLASSIFY every INTERSECTION if CONNECTION (filled circle in the middle) or PASSTHROUGH LINES (no filled circle)
-# Method 1:
-#       erode, something in the middle => conn. else pass
-#       disadv.: not filled conn. circle => wwrong recog.
-# Method 2:
-#       rotate, affine perfect picture => horiz, vert filters; something in the middle => conn. else pass
-#       disadv.: requires time, resource, not 100%
-
-# for l in lines:
-#     cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 2)
-# for ep in endpoints:
-#     cv2.circle(img, (ep.point.x, ep.point.y), 12, (255,0,255), -1)
+for l in lines:
+    cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 4)
+for ep in endpoints:
+    cv2.circle(img, (ep.point.x, ep.point.y), 12, (255,0,255), -1)
+# for IS in intersections:
+#     cv2.circle(img, (IS.point.x, IS.point.y), 12, (255,0,0), -1)
 
 
 
 
-
-
-# SKELETONIZATION
-
-temptresh = thresh.copy()
-
-size = np.size(temptresh)
-skel = np.zeros(temptresh.shape, np.uint8)
-
-# Get a Cross Shaped Kernel
-element = cv2.getStructuringElement(cv2.MORPH_CROSS, (3,3))
-
-# Repeat steps 2-4
-while True:
-    #Step 2: Open the image
-    open = cv2.morphologyEx(temptresh, cv2.MORPH_OPEN, element)
-    #Step 3: Substract open from the original image
-    temp = cv2.subtract(temptresh, open)
-    #Step 4: Erode the original image and refine the skeleton
-    eroded = cv2.erode(temptresh, element)
-    skel = cv2.bitwise_or(skel,temp)
-    temptresh = eroded.copy()
-    # Step 5: If there are no white pixels left ie.. the image has been completely eroded, quit the loop
-    if cv2.countNonZero(temptresh)==0:
-        break
-
-# Displaying the final skeleton
-cv2.imshow("Skeleton",resizeImage(skel, PICTURE_SCALE))
-
-
-
-
-
-
-# CONNECTED COMPONENTS
-
-
+# # CONNECTED COMPONENTS
 # findAreaTempImg = 255 - thresh
 
 # # finding areas
@@ -446,66 +374,17 @@ cv2.imshow("Skeleton",resizeImage(skel, PICTURE_SCALE))
 
 
 
+# COMPONENTS
+components = np.zeros(thresh.shape, dtype=thresh.dtype)
 
+for ep in endpoints:
+    cv2.circle(components, (ep.point.x, ep.point.y), 40, (255), -1)
 
+# for area in areas:
+#     cv2.rectangle(components, (area[0], area[1]), (area[0]+area[2], area[1]+area[3]), (255), -1)
 
-# TODO line width
-'''
-random.seed(datetime.now())
-line = lines[random.randint(0, len(lines) - 1)]
-line_angle = getLineAngle(line)
-cv2.line(img, (line.p1.x, line.p1.y), (line.p2.x, line.p2.y), (255,0,255), 10)
+components = cv2.erode(components, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)), iterations=25)
 
-line_LP, line_RP = [line.p1, line.p2] if line.p1.x < line.p2.x else [line.p2, line.p1]
-line_TP, line_BP = [line.p1, line.p2] if line.p1.y < line.p2.y else [line.p2, line.p1]
-
-slope = abs((line_RP.y - line_LP.y) / (line_RP.x - line_LP.x))
-
-angle = line_angle - (int)(line_angle / 90)*90 + 0.01
-if (angle > 45):
-    angle = angle - 90
-
-addHorizontal = abs(POINT_SIMILARITY_COMPARE_AREA_RADIUS / math.cos(angle)) # TODO: THIS IS JUST PURE $#!T
-addVertical = abs(POINT_SIMILARITY_COMPARE_AREA_RADIUS / math.sin(angle))
-
-line_T = int(line_TP.y - addVertical)
-line_B = int(line_BP.y + addVertical)
-line_L = int(line_LP.x - addHorizontal)
-line_R = int(line_RP.x + addHorizontal)
-
-# TL TR BL BR
-warp_pt1 = np.float32( [[ line_L, line_T ], [ line_R, line_T ], [ line_L, line_B ], [ line_R, line_B ]] )
-height, width = line_B - line_T, line_R - line_L
-print(width, height)
-warp_pt2 = np.float32( [[0,0], [width, 0], [0, height], [width, height]] )
-mtx = cv2.getPerspectiveTransform(warp_pt1, warp_pt2)
-output = cv2.warpPerspective(img, mtx, (width, height))
-
-# angle = line_angle - (int)(line_angle / 90)*90
-# if (angle > 45):
-#     angle = angle - 90
-
-# cv2.imshow("warp_before", resizeImage(output, PICTURE_SCALE))
-# rotateImage(output, angle)
-cv2.imshow("warp", resizeImage(output, PICTURE_SCALE))
-
-'''
-
-
-
-
-
-
-
-# TODO: maybe useful: Identify TRUE ENDPOINTS (line from one direction, nothing from the others)
-
-
-print("\nLines: {}\nIntersections: {}\nEndpoints: {}\nFiltered endpoints: {}".format(
-    len(horizontal)+len(vertical), len(intersections), len(endpoints), len(filteredEndpoints))
-    )
-
-# for ep in endpoints:
-#     cv2.circle(img, ep.point, 10, (255,0,255), thickness=-1)
 
 
 
@@ -514,7 +393,8 @@ print("\nLines: {}\nIntersections: {}\nEndpoints: {}\nFiltered endpoints: {}".fo
 
 # ============================== CNN ====================================
 # model = keras.models.load_model("symbolsModel.h5")
-# 
+
+# # thresh = cv2.resize(thresh, dsize=(100,100), interpolation=cv2.INTER_CUBIC)
 # prediction = model.predict(thresh)
 # if np.argmax(prediction[0]) == 0:
 #     print("inductor")
@@ -524,6 +404,8 @@ print("\nLines: {}\nIntersections: {}\nEndpoints: {}\nFiltered endpoints: {}".fo
 
 cv2.imshow("img", resizeImage(img, PICTURE_SCALE))
 cv2.imshow("thresh", resizeImage(thresh, PICTURE_SCALE))
+
+cv2.imshow("components", resizeImage(components, PICTURE_SCALE))
 
 t2 = time.perf_counter()
 
