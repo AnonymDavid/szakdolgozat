@@ -15,6 +15,7 @@
 # cv2.imshow("warp", cv2.resize(output, (int(output.shape[1]*PICTURE_SCALE/100), int(output.shape[0]*PICTURE_SCALE/100))))
 
 
+
 # ==========================================================================================================================
 # GET LINES INTERSECTION
 
@@ -35,6 +36,7 @@
 #     return Point(round(((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4))/D), round(((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4))/D))
 
 
+
 # ==========================================================================================================================
 # FANCY TODO
 
@@ -43,6 +45,7 @@
 # TODO:  #  TEST KERAS WITH REGULAR INTERSECTION AND CONNECTED INTERSECTION   #
 # TODO:  #                                                                    #
 # TODO:  ######################################################################
+
 
 
 # ==========================================================================================================================
@@ -63,6 +66,8 @@
 #             # circle outline
 #             radius = i[2]
 #             cv.circle(src, center, radius, (255, 0, 255), 3)
+
+
 
 # ==========================================================================================================================
 # FIND INTERSECTIONS
@@ -86,6 +91,7 @@
 #     intersections.append([line[0], intersectCountS])
 # if intersectCountE > 2:
 #     intersections.append([line[1], intersectCountE])
+
 
 
 # ==========================================================================================================================
@@ -115,3 +121,55 @@
 
 # # Displaying the final skeleton
 # cv2.imshow("Skeleton",resizeImage(skel, PICTURE_SCALE))
+
+
+
+# ==========================================================================================================================
+# FILTER LINES
+
+# horizontal = []
+# vertical = []
+# for line in linesP:
+#     line_angle = getLineAngle(line)
+#     if abs(line_angle - (round(line_angle / 180) * 180)) < LINE_SEARCH_ANGLE_THRESHOLD:
+#         line_left, line_right = ((line.p1, line.p2) if line.p1.x < line.p2.x else (line.p2, line.p1))
+#         lineC = 0
+#         while lineC < len(horizontal):
+#             hl_left, hl_right = ((horizontal[lineC].p1, horizontal[lineC].p2) if horizontal[lineC].p1.x < horizontal[lineC].p2.x else (horizontal[lineC].p2, horizontal[lineC].p1))
+#             if line_left.x <= hl_right.x and line_right.x >= hl_left.x:
+#                 slope = (hl_right.y - hl_left.y) / (hl_right.x - hl_left.x)
+
+#                 hl_middle_x = round(hl_left.x + (hl_right.x - hl_left.x) / 2)
+#                 hl_middle_y = round(hl_left.y + (hl_middle_x - hl_left.x) * slope)
+#                 hl_middle_y_estimate = round(line_left.y + (hl_middle_x - line_left.x) * slope)
+
+#                 if isSamePoint(Point(0, hl_middle_y), Point(0, hl_middle_y_estimate)):
+#                     horizontal[lineC] = Line((line_left if line_left.x < hl_left.x else hl_left), (line_right if line_right.x > hl_right.x else hl_right))
+#                     break
+
+#             lineC += 1
+        
+#         if lineC >= len(horizontal):
+#             horizontal.append(line)
+#     elif abs(line_angle - (round(line_angle / 90) * 90)) < LINE_SEARCH_ANGLE_THRESHOLD:
+#         line_top, line_bottom = ((line.p1, line.p2) if line.p1.y < line.p2.y else (line.p2, line.p1))
+#         lineC = 0
+#         while lineC < len(vertical):
+#             hl_top, hl_bottom = ((vertical[lineC].p1, vertical[lineC].p2) if vertical[lineC].p1.y < vertical[lineC].p2.y else (vertical[lineC].p2, vertical[lineC].p1))
+#             if line_top.y <= hl_bottom.y and line_bottom.y >= hl_top.y:
+#                 slope = (hl_bottom.x - hl_top.x) / (hl_bottom.y - hl_top.y)
+    
+#                 hl_middle_y = round(hl_top.y + (hl_bottom.y - hl_top.y) / 2)
+#                 hl_middle_x = round(hl_top.x + (hl_middle_y - hl_top.y) * slope)
+#                 hl_middle_x_estimate = round(line_top.x + (hl_middle_y - line_top.y) * slope)
+
+#                 if isSamePoint(Point(hl_middle_x, 0), Point(hl_middle_x_estimate, 0)):
+#                     vertical[lineC] = Line((line_top if line_top.y < hl_top.y else hl_top), (line_bottom if line_bottom.y > hl_bottom.y else hl_bottom))
+#                     break
+
+#             lineC += 1
+        
+#         if lineC >= len(vertical):
+#             vertical.append(line)
+
+# lines = horizontal + vertical

@@ -9,20 +9,19 @@ import os.path
 import random
 from datetime import datetime
 
-from tensorflow import keras
+# from tensorflow import keras
 
 # temporary imports
 import time
-
-from numpy.lib.function_base import diff
-from numpy.matrixlib.defmatrix import matrix
 
 # ----- CONSTANTS ----- TODO: all should be percent?
 CNT_DELETE_PERCENT = 15
 POINT_SIMILARITY_COMPARE_AREA_RADIUS = 10
 LINE_COUNT_CHECK_FOR_ROTATION = 50
 LINE_SEARCH_ANGLE_THRESHOLD = 5 # degrees, both ways
-LINE_CHECK_SIMILARITY_THRESHOLD = 5
+LINE_CHECK_SIMILARITY_THRESHOLD = 15
+LINE_AGGREGATION_SIMILARITY_THRESHOLD = 25
+
 # temp:
 PICTURE_SCALE = 25
 
@@ -31,8 +30,10 @@ PICTURE_SCALE = 25
 
 # ----- TYPES -----
 class Orientation(Enum):
-    HORIZONTAL = 0
-    VERTICAL = 1
+    HORIZONTAL_LEFT = 0
+    HORIZONTAL_RIGHT = 1
+    VERTICAL_TOP = 2
+    VERTICAL_BOT = 3
 
 class Point(NamedTuple):
     x: int
@@ -155,33 +156,8 @@ thresh = cv2.threshold(gray, 110, 255, cv2.THRESH_BINARY)[1]
 
 thresh = 255 - thresh
 
-thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (5,5)), iterations=3)
-
-# # REMOVING TEXTS
-# contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-# contourSizes = []
-
-# maxContour = 0
-# cntCounter = 0
-
-# for cnt in contours:
-#     peri = cv2.arcLength(cnt, True)
-#     approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
-    
-#     x, y, w, h = cv2.boundingRect(approx)
-
-#     contourSizes.append([cnt, w, h])
-
-#     if contourSizes[maxContour][1]*contourSizes[maxContour][2] < contourSizes[cntCounter][1]*contourSizes[cntCounter][2]:
-#         maxContour = cntCounter
-
-#     cntCounter += 1
-
-
-# for i in range(cntCounter):
-#     if contourSizes[i][1] < (contourSizes[maxContour][1] * CNT_DELETE_PERCENT / 100) and contourSizes[i][2] < (contourSizes[maxContour][2] * CNT_DELETE_PERCENT / 100):
-#         cv2.drawContours(thresh, [contourSizes[i][0]], 0, (0), -1)
+# thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)), iterations=3)
+# thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (5,5)), iterations=3)
 
 
 # ROTATE VIA LONGEST LINES AVG ANGLE
@@ -227,7 +203,7 @@ gray = rotateImage(gray, avgAngleDiff)
 img = rotateImage(img, avgAngleDiff)
 
 # TODO: houghlinesp parameters with percent
-linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, 10, 0))
+linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, 120, 0))
 if linesP is None:
     exit("No lines detected")
 
@@ -242,16 +218,16 @@ for line in linesP:
         lineC = 0
         while lineC < len(horizontal):
             hl_left, hl_right = ((horizontal[lineC].p1, horizontal[lineC].p2) if horizontal[lineC].p1.x < horizontal[lineC].p2.x else (horizontal[lineC].p2, horizontal[lineC].p1))
+            line_middle_y = line_left.y if line_left.y < line_right.y else line_right.y + abs(line_left.y - line_right.y) / 2
             if line_left.x <= hl_right.x and line_right.x >= hl_left.x:
-                slope = (hl_right.y - hl_left.y) / (hl_right.x - hl_left.x)
-    
-                hl_middle_x = round(hl_left.x + (hl_right.x - hl_left.x) / 2)
-                hl_middle_y = round(hl_left.y + (hl_middle_x - hl_left.x) * slope)
-                hl_middle_y_estimate = round(line_left.y + (hl_middle_x - line_left.x) * slope)
+                hl_middle_y = hl_left.y if hl_left.y < hl_right.y else hl_right.y + abs(hl_left.y - hl_right.y) / 2
 
-                if isSamePoint(Point(0, hl_middle_y), Point(0, hl_middle_y_estimate)):
-                    horizontal[lineC] = Line((line_left if line_left.x < hl_left.x else hl_left), (line_right if line_right.x > hl_right.x else hl_right))
-                    break
+                if abs(hl_middle_y - line_middle_y) < LINE_AGGREGATION_SIMILARITY_THRESHOLD:
+                    tempLine = Line((line_left if line_left.x < hl_left.x else hl_left), (line_right if line_right.x > hl_right.x else hl_right))
+                    tempLineAngle = getLineAngle(tempLine)
+                    if tempLineAngle < LINE_SEARCH_ANGLE_THRESHOLD or 360-tempLineAngle < LINE_SEARCH_ANGLE_THRESHOLD:
+                        horizontal[lineC] = tempLine
+                        break
 
             lineC += 1
         
@@ -259,19 +235,19 @@ for line in linesP:
             horizontal.append(line)
     elif abs(line_angle - (round(line_angle / 90) * 90)) < LINE_SEARCH_ANGLE_THRESHOLD:
         line_top, line_bottom = ((line.p1, line.p2) if line.p1.y < line.p2.y else (line.p2, line.p1))
+        line_middle_x = line_top.x if line_top.x < line_bottom.x else line_bottom.x + abs(line_top.x - line_bottom.x) / 2
         lineC = 0
         while lineC < len(vertical):
             hl_top, hl_bottom = ((vertical[lineC].p1, vertical[lineC].p2) if vertical[lineC].p1.y < vertical[lineC].p2.y else (vertical[lineC].p2, vertical[lineC].p1))
             if line_top.y <= hl_bottom.y and line_bottom.y >= hl_top.y:
-                slope = (hl_bottom.x - hl_top.x) / (hl_bottom.y - hl_top.y)
-    
-                hl_middle_y = round(hl_top.y + (hl_bottom.y - hl_top.y) / 2)
-                hl_middle_x = round(hl_top.x + (hl_middle_y - hl_top.y) * slope)
-                hl_middle_x_estimate = round(line_top.x + (hl_middle_y - line_top.y) * slope)
+                hl_middle_x = hl_top.x if hl_top.x < hl_bottom.x else hl_bottom.x + abs(hl_top.x - hl_bottom.x) / 2
 
-                if isSamePoint(Point(hl_middle_x, 0), Point(hl_middle_x_estimate, 0)):
-                    vertical[lineC] = Line((line_top if line_top.y < hl_top.y else hl_top), (line_bottom if line_bottom.y > hl_bottom.y else hl_bottom))
-                    break
+                if abs(hl_middle_x - line_middle_x) < LINE_AGGREGATION_SIMILARITY_THRESHOLD:
+                    tempLine = Line((line_top if line_top.y < hl_top.y else hl_top), (line_bottom if line_bottom.y > hl_bottom.y else hl_bottom))
+                    tempLineAngle = getLineAngle(tempLine)
+                    if abs(tempLineAngle - 90) < LINE_SEARCH_ANGLE_THRESHOLD:
+                        vertical[lineC] = tempLine
+                        break
 
             lineC += 1
         
@@ -280,57 +256,52 @@ for line in linesP:
 
 lines = horizontal + vertical
 
-# FIND INTERSECTIONS
-# intersections = []
-
-# for line in linesP:
-#     Icontains1 = False # line first point
-#     Icontains2 = False # line second point
-#     for intersec in intersections:
-#         if (not Icontains1) and isSamePoint(line.p1, intersec.point):
-#             Icontains1 = True
-#         if (not Icontains2) and isSamePoint(line.p2, intersec.point):
-#             Icontains2 = True
-    
-#     intersectCount1 = 0 # line first point
-#     intersectCount2 = 0 # line second point
-#     for line2 in lines:
-#         if line != line2:
-#             if (not Icontains1):
-#                 if isSamePoint(line.p1,line2.p1):
-#                     intersectCount1 += 1
-#                 elif isSamePoint(line.p1,line2.p2):
-#                     intersectCount1 += 1
-#             if (not Icontains2):
-#                 if isSamePoint(line.p2,line2.p1):
-#                     intersectCount2 += 1
-#                 elif isSamePoint(line.p2,line2.p2):
-#                     intersectCount2 += 1
-    
-#     if intersectCount1 > 2:
-#         intersections.append(Intersection(line.p1, intersectCount1))
-#     if intersectCount2 > 2:
-#         intersections.append(Intersection(line.p2, intersectCount2))
-
-
 endpoints = []
-filteredEndpoints = []
+
+ep_HL = []
+ep_HR = []
+ep_VT = []
+ep_VB = []
+
 
 for line in horizontal:
-    endpoints.append(Endpoint(line.p1, Orientation.HORIZONTAL))
-    endpoints.append(Endpoint(line.p2, Orientation.HORIZONTAL))
+    if line.p1.x < line.p2.x:
+        endpoints.append(Endpoint(line.p1, Orientation.HORIZONTAL_LEFT))
+        endpoints.append(Endpoint(line.p2, Orientation.HORIZONTAL_RIGHT))
+
+        ep_HL.append(line.p1)
+        ep_HR.append(line.p2)
+    else:
+        endpoints.append(Endpoint(line.p1, Orientation.HORIZONTAL_RIGHT))
+        endpoints.append(Endpoint(line.p2, Orientation.HORIZONTAL_LEFT))
+        
+        ep_HL.append(line.p2)
+        ep_HR.append(line.p1)
 
 for line in vertical:
-    endpoints.append(Endpoint(line.p1, Orientation.VERTICAL))
-    endpoints.append(Endpoint(line.p2, Orientation.VERTICAL))
+    if line.p1.y < line.p2.y:
+        endpoints.append(Endpoint(line.p1, Orientation.VERTICAL_TOP))
+        endpoints.append(Endpoint(line.p2, Orientation.VERTICAL_BOT))
+
+        ep_VT.append(line.p1)
+        ep_VB.append(line.p2)
+    else:
+        endpoints.append(Endpoint(line.p1, Orientation.VERTICAL_BOT))
+        endpoints.append(Endpoint(line.p2, Orientation.VERTICAL_TOP))
+
+        ep_VT.append(line.p2)
+        ep_VB.append(line.p1)
 
 
 for l in lines:
     cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 4)
+
 for ep in endpoints:
     cv2.circle(img, (ep.point.x, ep.point.y), 12, (255,0,255), -1)
-# for IS in intersections:
-#     cv2.circle(img, (IS.point.x, IS.point.y), 12, (255,0,0), -1)
+
+cv2.line(img, (10, 10), (40, 10), (0,255,0), 4)
+
+
 
 
 
@@ -374,21 +345,6 @@ for ep in endpoints:
 
 
 
-# COMPONENTS
-components = np.zeros(thresh.shape, dtype=thresh.dtype)
-
-for ep in endpoints:
-    cv2.circle(components, (ep.point.x, ep.point.y), 40, (255), -1)
-
-# for area in areas:
-#     cv2.rectangle(components, (area[0], area[1]), (area[0]+area[2], area[1]+area[3]), (255), -1)
-
-components = cv2.erode(components, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)), iterations=25)
-
-
-
-
-
 
 
 # ============================== CNN ====================================
@@ -404,8 +360,6 @@ components = cv2.erode(components, cv2.getStructuringElement(cv2.MORPH_RECT, (3,
 
 cv2.imshow("img", resizeImage(img, PICTURE_SCALE))
 cv2.imshow("thresh", resizeImage(thresh, PICTURE_SCALE))
-
-cv2.imshow("components", resizeImage(components, PICTURE_SCALE))
 
 t2 = time.perf_counter()
 
