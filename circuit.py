@@ -21,6 +21,11 @@ LINE_COUNT_CHECK_FOR_ROTATION = 50
 LINE_SEARCH_ANGLE_THRESHOLD = 5 # degrees, both ways
 LINE_CHECK_SIMILARITY_THRESHOLD = 15
 LINE_AGGREGATION_SIMILARITY_THRESHOLD = 25
+COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = 36
+COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = 300
+COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = 0
+COMPONENT_MIN_BOX_SIZE = 100
+COMPONENT_BOX_SIZE_OFFSET = 40
 
 # temp:
 PICTURE_SCALE = 25
@@ -203,7 +208,7 @@ gray = rotateImage(gray, avgAngleDiff)
 img = rotateImage(img, avgAngleDiff)
 
 # TODO: houghlinesp parameters with percent
-linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, 120, 0))
+linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, 110, 0))
 if linesP is None:
     exit("No lines detected")
 
@@ -299,11 +304,58 @@ for l in lines:
 for ep in endpoints:
     cv2.circle(img, (ep.point.x, ep.point.y), 12, (255,0,255), -1)
 
+# for ep in ep_VB:
+#     cv2.circle(img, (ep.x, ep.y), 12, (255,0,255), -1)
+
 cv2.line(img, (10, 10), (40, 10), (0,255,0), 4)
 
 
+components = []
+compCount = 0
 
+for hr in ep_HR:
+    # cv2.rectangle(img, (hr.x + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH, hr.y - round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2)), (hr.x + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH, hr.y + round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2)), (0,0,255), 5)
+    hlc = compCount
+    while (hlc < len(ep_HL) and
+        (
+            ep_HL[hlc].y > hr.y + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
+            ep_HL[hlc].y < hr.y - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
+            ep_HL[hlc].x > hr.x + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
+            ep_HL[hlc].x < hr.x + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
+        )):
+        hlc += 1
+    
+    if hlc < len(ep_HL):
+        compSize = ep_HL[hlc].x - hr.x
+        if compSize < COMPONENT_MIN_BOX_SIZE:
+            compSize = COMPONENT_MIN_BOX_SIZE
+        components.append([[hr.x - COMPONENT_BOX_SIZE_OFFSET, hr.y - round(compSize/2)], [ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET, ep_HL[hlc].y + round(compSize / 2)]])
+        ep_HL[compCount], ep_HL[hlc] = ep_HL[hlc], ep_HL[compCount]
+        compCount += 1
 
+for vb in ep_VB:
+    # cv2.rectangle(img, (vb.x - round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2), vb.y + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH), (vb.x + round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2), vb.y + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH), (0,0,255), 5)
+    vtc = compCount
+    while (vtc < len(ep_VT) and
+        (
+            ep_VT[vtc].x > vb.x + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
+            ep_VT[vtc].x < vb.x - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
+            ep_VT[vtc].y > vb.y + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
+            ep_VT[vtc].y < vb.y + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
+        )):
+        vtc += 1
+    
+    if vtc < len(ep_VT):
+        compSize = ep_VT[vtc].y - vb.y
+        if compSize < COMPONENT_MIN_BOX_SIZE:
+            compSize = COMPONENT_MIN_BOX_SIZE
+        print(compSize)
+        components.append([[vb.x - round(compSize/2), vb.y - COMPONENT_BOX_SIZE_OFFSET], [ep_VT[vtc].x + round(compSize / 2), ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET]])
+        ep_VT[compCount], ep_VT[vtc] = ep_VT[vtc], ep_VT[compCount]
+        compCount += 1
+
+for c in components:
+    cv2.rectangle(img, (c[0][0], c[0][1]), (c[1][0], c[1][1]), (0,0,255), 5)
 
 
 # # CONNECTED COMPONENTS
