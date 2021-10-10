@@ -1,0 +1,295 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<circuit version="1.4" xmlns="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document">
+	<properties>
+		<width>780</width>
+		<height>420</height>
+	</properties>
+	<definitions>
+		<src col="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/components/common">
+			<add id="0" item="acsource" p4:guid="8979c617-b041-4069-8769-0b76dc0e6c52" p4:version="1.2.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+		</src>
+	</definitions>
+	<elements>
+		<w x="200" y="330" o="v" sz="50" flp="false" />
+		<w x="200" y="230" o="v" sz="60" flp="false" />
+		<w x="200" y="130" o="v" sz="60" flp="false" />
+		<c id="0" tp="{0}" x="200" y="190" o="v" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="0" pt="b" />
+				<cn id="1" pt="a" />
+			</cns>
+		</c>
+		<c id="1" tp="{0}" x="200" y="290" o="v" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="2" pt="b" />
+				<cn id="0" pt="a" />
+			</cns>
+		</c>
+		<w x="550" y="40" o="v" sz="50" flp="false" />
+		<w x="550" y="130" o="v" sz="80" flp="false" />
+		<w x="550" y="250" o="v" sz="130" flp="false" />
+		<w x="480" y="380" o="h" sz="110" flp="false" />
+		<w x="630" y="380" o="h" sz="40" flp="false" />
+		<c id="2" tp="{0}" x="590" y="380" o="h" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="3" pt="a" />
+				<cn id="4" pt="b" />
+			</cns>
+		</c>
+		<w x="650" y="300" o="h" sz="90" flp="false" />
+		<w x="450" y="300" o="h" sz="160" flp="false" />
+		<w x="340" y="300" o="h" sz="70" flp="false" />
+		<w x="340" y="40" o="v" sz="140" flp="false" />
+		<w x="340" y="220" o="v" sz="160" flp="false" />
+		<w x="200" y="40" o="v" sz="50" flp="false" />
+		<w x="50" y="190" o="v" sz="190" flp="false" />
+		<w x="50" y="380" o="h" sz="70" flp="false" />
+		<w x="160" y="380" o="h" sz="100" flp="false" />
+		<w x="300" y="380" o="h" sz="140" flp="false" />
+		<w x="710" y="380" o="h" sz="30" flp="false" />
+		<w x="740" y="240" o="v" sz="140" flp="false" />
+		<w x="740" y="120" o="v" sz="80" flp="false" />
+		<w x="740" y="40" o="v" sz="40" flp="false" />
+		<w x="650" y="40" o="h" sz="90" flp="false" />
+		<w x="510" y="40" o="h" sz="100" flp="false" />
+		<w x="420" y="40" o="h" sz="50" flp="false" />
+		<w x="310" y="40" o="h" sz="70" flp="false" />
+		<w x="140" y="40" o="h" sz="130" flp="false" />
+		<w x="50" y="40" o="h" sz="50" flp="false" />
+		<w x="50" y="40" o="v" sz="110" flp="false" />
+		<c id="3" tp="{0}" x="470" y="40" o="h" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="5" pt="b" />
+				<cn id="6" pt="a" />
+			</cns>
+		</c>
+		<c id="4" tp="{0}" x="270" y="40" o="h" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="7" pt="b" />
+				<cn id="8" pt="a" />
+			</cns>
+		</c>
+		<c id="5" tp="{0}" x="670" y="380" o="h" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="4" pt="a" />
+				<cn id="9" pt="b" />
+			</cns>
+		</c>
+		<c id="6" tp="{0}" x="740" y="80" o="v" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="10" pt="b" />
+				<cn id="11" pt="a" />
+			</cns>
+		</c>
+		<c id="7" tp="{0}" x="740" y="200" o="v" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="9" pt="b" />
+				<cn id="10" pt="a" />
+			</cns>
+		</c>
+		<c id="8" tp="{0}" x="610" y="300" o="h" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="9" pt="b" />
+				<cn id="12" pt="a" />
+			</cns>
+		</c>
+		<c id="9" tp="{0}" x="610" y="40" o="h" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="11" pt="b" />
+				<cn id="5" pt="a" />
+			</cns>
+		</c>
+		<c id="10" tp="{0}" x="200" y="90" o="v" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="1" pt="b" />
+				<cn id="8" pt="a" />
+			</cns>
+		</c>
+		<c id="11" tp="{0}" x="410" y="300" o="h" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="12" pt="b" />
+				<cn id="13" pt="a" />
+			</cns>
+		</c>
+		<c id="12" tp="{0}" x="550" y="90" o="v" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="5" pt="a" />
+				<cn id="14" pt="b" />
+			</cns>
+		</c>
+		<c id="13" tp="{0}" x="260" y="380" o="h" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="2" pt="a" />
+				<cn id="13" pt="b" />
+			</cns>
+		</c>
+		<c id="14" tp="{0}" x="380" y="40" o="h" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="6" pt="b" />
+				<cn id="7" pt="a" />
+			</cns>
+		</c>
+		<c id="15" tp="{0}" x="100" y="40" o="h" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="8" pt="b" />
+				<cn id="15" pt="a" />
+			</cns>
+		</c>
+		<c id="16" tp="{0}" x="120" y="380" o="h" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="16" pt="a" />
+				<cn id="2" pt="b" />
+			</cns>
+		</c>
+		<c id="17" tp="{0}" x="440" y="380" o="h" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="3" pt="b" />
+				<cn id="13" pt="a" />
+			</cns>
+		</c>
+		<c id="18" tp="{0}" x="550" y="210" o="v" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="14" pt="a" />
+				<cn id="3" pt="b" />
+			</cns>
+		</c>
+		<c id="19" tp="{0}" x="340" y="180" o="v" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="7" pt="a" />
+				<cn id="13" pt="b" />
+			</cns>
+		</c>
+		<c id="20" tp="{0}" x="50" y="150" o="v" sz="40" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns>
+				<cn id="16" pt="b" />
+				<cn id="15" pt="a" />
+			</cns>
+		</c>
+	</elements>
+</circuit>

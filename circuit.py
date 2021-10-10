@@ -14,17 +14,17 @@ from datetime import datetime
 # temporary imports
 import time
 
-# ----- CONSTANTS ----- TODO: all should be percent?
+# ----- CONSTANTS ----- #TODO: all should be percent?
 CNT_DELETE_PERCENT = 15
 POINT_SIMILARITY_COMPARE_AREA_RADIUS = 10
 LINE_COUNT_CHECK_FOR_ROTATION = 50
 LINE_SEARCH_ANGLE_THRESHOLD = 5 # degrees, both ways
 LINE_CHECK_SIMILARITY_THRESHOLD = 15
 LINE_AGGREGATION_SIMILARITY_THRESHOLD = 25
-COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = 36
+COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = 50
 COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = 300
-COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = 0
-COMPONENT_MIN_BOX_SIZE = 100
+COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = 16
+COMPONENT_MIN_BOX_SIZE = 150
 COMPONENT_BOX_SIZE_OFFSET = 40
 
 # temp:
@@ -39,6 +39,8 @@ class Orientation(Enum):
     HORIZONTAL_RIGHT = 1
     VERTICAL_TOP = 2
     VERTICAL_BOT = 3
+    HORIZONTAL = 4
+    VERTICAL = 5
 
 class Point(NamedTuple):
     x: int
@@ -114,6 +116,13 @@ def isSamePoint(p1: Point, p2: Point) -> bool:
     if abs(p1.x - p2.x) < POINT_SIMILARITY_COMPARE_AREA_RADIUS and abs(p1.y - p2.y) < POINT_SIMILARITY_COMPARE_AREA_RADIUS:
         return True
     return False
+
+def pointsCloseArray(p1: Point, points: List[Point]) -> int:
+    """Check if the given point is close to another in the array."""
+    for i in range(len(points)):
+        if isSamePoint(p1, points[i]):
+            return i
+    return -1
 
 def rotateImage(image, angle: int):
     """Rotates a given image by the given angle counterclockwise."""
@@ -207,17 +216,20 @@ thresh = rotateImage(thresh, avgAngleDiff)
 gray = rotateImage(gray, avgAngleDiff)
 img = rotateImage(img, avgAngleDiff)
 
-# TODO: houghlinesp parameters with percent
+
+# finding connection lines
 linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, 110, 0))
 if linesP is None:
     exit("No lines detected")
 
 linesP = convertHoughToLineList(linesP)
 
+# filtering and separating horizontal and vertical lines
 horizontal = []
 vertical = []
 for line in linesP:
     line_angle = getLineAngle(line)
+    # horizontal
     if abs(line_angle - (round(line_angle / 180) * 180)) < LINE_SEARCH_ANGLE_THRESHOLD:
         line_left, line_right = ((line.p1, line.p2) if line.p1.x < line.p2.x else (line.p2, line.p1))
         lineC = 0
@@ -238,6 +250,7 @@ for line in linesP:
         
         if lineC >= len(horizontal):
             horizontal.append(line)
+    # vertical
     elif abs(line_angle - (round(line_angle / 90) * 90)) < LINE_SEARCH_ANGLE_THRESHOLD:
         line_top, line_bottom = ((line.p1, line.p2) if line.p1.y < line.p2.y else (line.p2, line.p1))
         line_middle_x = line_top.x if line_top.x < line_bottom.x else line_bottom.x + abs(line_top.x - line_bottom.x) / 2
@@ -261,13 +274,13 @@ for line in linesP:
 
 lines = horizontal + vertical
 
+# finding and separating line endpoints
 endpoints = []
 
 ep_HL = []
 ep_HR = []
 ep_VT = []
 ep_VB = []
-
 
 for line in horizontal:
     if line.p1.x < line.p2.x:
@@ -304,15 +317,18 @@ for l in lines:
 for ep in endpoints:
     cv2.circle(img, (ep.point.x, ep.point.y), 12, (255,0,255), -1)
 
-# for ep in ep_VB:
-#     cv2.circle(img, (ep.x, ep.y), 12, (255,0,255), -1)
 
-cv2.line(img, (10, 10), (40, 10), (0,255,0), 4)
+# finding components
 
+solo_ep_HL = []
+solo_ep_HR = []
+solo_ep_VT = []
+solo_ep_VB = []
 
 components = []
 compCount = 0
 
+# horizontal components
 for hr in ep_HR:
     # cv2.rectangle(img, (hr.x + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH, hr.y - round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2)), (hr.x + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH, hr.y + round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2)), (0,0,255), 5)
     hlc = compCount
@@ -329,13 +345,22 @@ for hr in ep_HR:
         compSize = ep_HL[hlc].x - hr.x
         if compSize < COMPONENT_MIN_BOX_SIZE:
             compSize = COMPONENT_MIN_BOX_SIZE
-        components.append([[hr.x - COMPONENT_BOX_SIZE_OFFSET, hr.y - round(compSize/2)], [ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET, ep_HL[hlc].y + round(compSize / 2)]])
+        components.append([Point(hr.x - COMPONENT_BOX_SIZE_OFFSET, hr.y - round(compSize/2)), Point(ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET, ep_HL[hlc].y + round(compSize / 2)), Orientation.HORIZONTAL])
         ep_HL[compCount], ep_HL[hlc] = ep_HL[hlc], ep_HL[compCount]
         compCount += 1
+    else:
+        solo_ep_HR.append(hr)
 
+for i in range(compCount, len(ep_HL)):
+    solo_ep_HL.append(ep_HL[i])
+    
+
+# vertical components
+compCount = 0
 for vb in ep_VB:
     # cv2.rectangle(img, (vb.x - round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2), vb.y + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH), (vb.x + round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2), vb.y + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH), (0,0,255), 5)
     vtc = compCount
+    
     while (vtc < len(ep_VT) and
         (
             ep_VT[vtc].x > vb.x + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
@@ -349,51 +374,94 @@ for vb in ep_VB:
         compSize = ep_VT[vtc].y - vb.y
         if compSize < COMPONENT_MIN_BOX_SIZE:
             compSize = COMPONENT_MIN_BOX_SIZE
-        print(compSize)
-        components.append([[vb.x - round(compSize/2), vb.y - COMPONENT_BOX_SIZE_OFFSET], [ep_VT[vtc].x + round(compSize / 2), ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET]])
+        
+        components.append([Point(vb.x - round(compSize/2), vb.y - COMPONENT_BOX_SIZE_OFFSET), Point(ep_VT[vtc].x + round(compSize / 2), ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET), Orientation.VERTICAL])
         ep_VT[compCount], ep_VT[vtc] = ep_VT[vtc], ep_VT[compCount]
         compCount += 1
+    else:
+        solo_ep_VB.append(vb)
 
+for i in range(compCount, len(ep_VT)):
+    solo_ep_VT.append(ep_VT[i])
+
+
+# find third/forth connection on components if exists (transistor)
 for c in components:
+    compMiddleX = round(c[0].x + ((c[1].x - c[0].x) / 2))
+    compMiddleY = round(c[0].y + ((c[1].y - c[0].y) / 2))
+    if c[2] == Orientation.HORIZONTAL:
+        # top side
+        vtc = 0
+        while (vtc < len(solo_ep_VT) and
+        (
+            solo_ep_VT[vtc].x > compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
+            solo_ep_VT[vtc].x < compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
+            solo_ep_VT[vtc].y < compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
+            solo_ep_VT[vtc].y > compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
+        )):
+            vtc += 1
+    
+        if vtc < len(solo_ep_VT):
+            c[0] = Point(c[0].x, solo_ep_VT[vtc].y - COMPONENT_BOX_SIZE_OFFSET*2)
+        
+        # bot side
+        vbc = 0
+        while (vbc < len(solo_ep_VT) and
+        (
+            solo_ep_VB[vbc].x > compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
+            solo_ep_VB[vbc].x < compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
+            solo_ep_VB[vbc].y > compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
+            solo_ep_VB[vbc].y < compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
+        )):
+            vbc += 1
+    
+        if vbc < len(solo_ep_VB):
+            c[1] = Point(c[1].x, solo_ep_VB[vbc].y + COMPONENT_BOX_SIZE_OFFSET*2)
+    else:
+        # right side
+        hlc = 0
+        while (hlc < len(solo_ep_HL) and
+        (
+            solo_ep_HL[hlc].y > compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
+            solo_ep_HL[hlc].y < compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
+            solo_ep_HL[hlc].x > compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
+            solo_ep_HL[hlc].x < compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
+        )):
+            hlc += 1
+    
+        if hlc < len(solo_ep_HL):
+            c[1] = Point(solo_ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET*2, c[1].y)
+        
+        # left side
+        hrc = 0
+        while (hrc < len(solo_ep_HR) and
+        (
+            solo_ep_HR[hrc].y > compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
+            solo_ep_HR[hrc].y < compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
+            solo_ep_HR[hrc].x < compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
+            solo_ep_HR[hrc].x > compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
+        )):
+            hrc += 1
+        
+        if hrc < len(solo_ep_HR):
+            c[0] = Point(solo_ep_HR[hrc].x - COMPONENT_BOX_SIZE_OFFSET*2, c[0].y)
+    
+    
     cv2.rectangle(img, (c[0][0], c[0][1]), (c[1][0], c[1][1]), (0,0,255), 5)
 
+    componentImg = img[c[0][1]:c[1][1], c[0][0]:c[1][0]]
 
-# # CONNECTED COMPONENTS
-# findAreaTempImg = 255 - thresh
+    # cv2.imshow("component", componentImg)
 
-# # finding areas
-# num_labels, labels_im = cv2.connectedComponents(findAreaTempImg)
 
-# areas = []
-
-# for label in range(1,num_labels):
-#     # create mask from area
-#     mask = np.zeros((img.shape[0],img.shape[1]), dtype=np.uint8)
-#     mask[labels_im == label] = 255
-    
-#     contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
-#     cnt = contours[0]
-    
-#     # figuring out shapes
-#     peri = cv2.arcLength(cnt, True)
-#     approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
-    
-#     x, y, w, h = cv2.boundingRect(approx)
-    
-#     areas.append([x,y,w,h])
-    
-#     # if two areas overlap, delete the bigger (filter out ares where components and lines enclosed an area)
-#     for i in range(len(areas) - 1):
-#         if (x <= areas[i][0]+areas[i][2]) and (y <= areas[i][1]+areas[i][3]) and (x+w >= areas[i][0]) and (y+h >= areas[i][1]):
-#             if (w*h < areas[i][2]*areas[i][3]):
-#                 del(areas[i])
-#             else:
-#                 del(areas[-1])
-#             break
-
-# for area in areas:
-#     cv2.rectangle(img, (area[0], area[1]), (area[0]+area[2], area[1]+area[3]), (0,0,255), 8)
+# for ep in solo_ep_HL:
+#     cv2.circle(img, (ep.x, ep.y), 15, (255,0,0), -1)
+# for ep in solo_ep_HR:
+#     cv2.circle(img, (ep.x, ep.y), 15, (0,255,0), -1)
+# for ep in solo_ep_VT:
+#     cv2.circle(img, (ep.x, ep.y), 15, (255,0,0), -1)
+# for ep in solo_ep_VB:
+#     cv2.circle(img, (ep.x, ep.y), 15, (0,255,0), -1)
 
 
 
