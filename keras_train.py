@@ -2,48 +2,62 @@ import numpy as np
 from cv2 import cv2
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
+from tensorflow.keras import layers, preprocessing
+from tensorflow.python.keras.layers.preprocessing.image_preprocessing import RandomFlip
 
-img_height = 100
-img_width = 100
-batch_size = 2
+img_height = 150
+img_width = 150
+batch_size = 10
 
-train_path = 'circuits/train'
-valid_path = 'circuits/valid'
+images_path = 'circuits/cnn/train'
 
 ds_train = tf.keras.preprocessing.image_dataset_from_directory(
-    train_path,
+    images_path,
     labels="inferred",
     label_mode="int",
     color_mode='grayscale',
     batch_size=batch_size,
     image_size=(img_height,img_width),
     shuffle=True,
-    seed=123,
+    seed=135,
     validation_split=0.2,
     subset="training",
 )
 
-ds_validation = tf.keras.preprocessing.image_dataset_from_directory(
-    train_path,
+ds_valid = tf.keras.preprocessing.image_dataset_from_directory(
+    images_path,
     labels="inferred",
     label_mode="int",
     color_mode='grayscale',
     batch_size=batch_size,
     image_size=(img_height,img_width),
     shuffle=True,
-    seed=123,
+    seed=135,
     validation_split=0.2,
     subset="validation",
 )
 
+print(len(ds_train))
+print(len(ds_valid))
+
+data_augmentation = keras.Sequential([
+    layers.experimental.preprocessing.RandomFlip("vertical", input_shape=(img_height, img_width,1)),
+    layers.experimental.preprocessing.RandomRotation(0.1),
+    layers.experimental.preprocessing.RandomZoom(0.2),
+    layers.experimental.preprocessing.RandomTranslation(0.1, 0.1),
+    ])
+
+
 model = keras.Sequential([
-    layers.Input((100,100, 1)),
-    layers.Conv2D(16, 3),
-    layers.Conv2D(32, 3),
+    data_augmentation,
+    layers.Input((img_height,img_width, 1)),
+    layers.Conv2D(16, 3, activation='relu'),
+    layers.MaxPool2D(),
+    layers.Conv2D(32, 3, activation='relu'),
     layers.MaxPool2D(),
     layers.Flatten(),
-    layers.Dense(2),
+    layers.Dense(128, activation='relu'),
+    layers.Dense(10),
 ])
 
 model.compile(
@@ -54,6 +68,6 @@ model.compile(
     metrics=["accuracy"],
 )
 
-model.fit(ds_train, epochs=5, verbose=2)
+model.fit(ds_train, validation_data=ds_valid, epochs=25, verbose=2)
 
 model.save("symbolsModel.h5")

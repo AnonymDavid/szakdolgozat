@@ -2,7 +2,7 @@ import numpy as np
 from cv2 import cv2
 import glob
 
-pictures = glob.glob("asd\\*.png")
+pictures = glob.glob("circuits/cnn/tests/6.jpg")
 
 for pic in pictures:
     img = cv2.imread(pic)

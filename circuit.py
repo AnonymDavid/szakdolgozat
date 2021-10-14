@@ -17,7 +17,7 @@ import time
 # ----- CONSTANTS ----- #TODO: all should be percent?
 CNT_DELETE_PERCENT = 15
 POINT_SIMILARITY_COMPARE_AREA_RADIUS = 10
-LINE_COUNT_CHECK_FOR_ROTATION = 50
+LINE_COUNT_CHECK_FOR_ROTATION = 10
 LINE_SEARCH_ANGLE_THRESHOLD = 5 # degrees, both ways
 LINE_CHECK_SIMILARITY_THRESHOLD = 15
 LINE_AGGREGATION_SIMILARITY_THRESHOLD = 25
@@ -358,7 +358,7 @@ for i in range(compCount, len(ep_HL)):
 # vertical components
 compCount = 0
 for vb in ep_VB:
-    # cv2.rectangle(img, (vb.x - round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2), vb.y + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH), (vb.x + round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2), vb.y + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH), (0,0,255), 5)
+    # cv2.rectangle(img, (vb.x - round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2), vb.y + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH), (vb.x + round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2), vb.y + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH), (255,0,0), 8)
     vtc = compCount
     
     while (vtc < len(ep_VT) and
@@ -391,32 +391,32 @@ for c in components:
     compMiddleY = round(c[0].y + ((c[1].y - c[0].y) / 2))
     if c[2] == Orientation.HORIZONTAL:
         # top side
+        vbc = 0
+        while (vbc < len(solo_ep_VB) and
+        (
+            solo_ep_VB[vbc].x > compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
+            solo_ep_VB[vbc].x < compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
+            solo_ep_VB[vbc].y < compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
+            solo_ep_VB[vbc].y > compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
+        )):
+            vbc += 1
+    
+        if vbc < len(solo_ep_VB):
+            c[0] = Point(c[0].x, solo_ep_VB[vbc].y - COMPONENT_BOX_SIZE_OFFSET*2)
+        
+        # bot side
         vtc = 0
         while (vtc < len(solo_ep_VT) and
         (
             solo_ep_VT[vtc].x > compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
             solo_ep_VT[vtc].x < compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_VT[vtc].y < compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
-            solo_ep_VT[vtc].y > compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
+            solo_ep_VT[vtc].y > compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
+            solo_ep_VT[vtc].y < compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
         )):
             vtc += 1
     
         if vtc < len(solo_ep_VT):
-            c[0] = Point(c[0].x, solo_ep_VT[vtc].y - COMPONENT_BOX_SIZE_OFFSET*2)
-        
-        # bot side
-        vbc = 0
-        while (vbc < len(solo_ep_VT) and
-        (
-            solo_ep_VB[vbc].x > compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_VB[vbc].x < compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_VB[vbc].y > compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
-            solo_ep_VB[vbc].y < compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
-        )):
-            vbc += 1
-    
-        if vbc < len(solo_ep_VB):
-            c[1] = Point(c[1].x, solo_ep_VB[vbc].y + COMPONENT_BOX_SIZE_OFFSET*2)
+            c[1] = Point(c[1].x, solo_ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET*2)
     else:
         # right side
         hlc = 0
@@ -450,6 +450,9 @@ for c in components:
     cv2.rectangle(img, (c[0][0], c[0][1]), (c[1][0], c[1][1]), (0,0,255), 5)
 
     componentImg = img[c[0][1]:c[1][1], c[0][0]:c[1][0]]
+
+    # cv2.imshow("component", cv2.resize(componentImg, (150,150)))
+    # cv2.waitKey(0)
 
     # cv2.imshow("component", componentImg)
 
