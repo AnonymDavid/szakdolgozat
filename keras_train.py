@@ -7,7 +7,8 @@ from tensorflow.python.keras.layers.preprocessing.image_preprocessing import Ran
 
 img_height = 150
 img_width = 150
-batch_size = 10
+comp_count = 11
+batch_size = comp_count
 
 images_path = 'circuits/cnn/train'
 
@@ -57,7 +58,7 @@ model = keras.Sequential([
     layers.MaxPool2D(),
     layers.Flatten(),
     layers.Dense(128, activation='relu'),
-    layers.Dense(10),
+    layers.Dense(comp_count),
 ])
 
 model.compile(
@@ -68,6 +69,6 @@ model.compile(
     metrics=["accuracy"],
 )
 
-model.fit(ds_train, validation_data=ds_valid, epochs=25, verbose=2)
+model.fit(ds_train, validation_data=ds_valid, epochs=40, verbose=2)
 
 model.save("symbolsModel.h5")

@@ -24,12 +24,13 @@ LINE_AGGREGATION_SIMILARITY_THRESHOLD = 25
 COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = 50
 COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = 300
 COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = 16
-COMPONENT_MIN_BOX_SIZE = 150
+COMPONENT_MIN_BOX_SIZE = 200
 COMPONENT_BOX_SIZE_OFFSET = 40
 
 # temp:
 PICTURE_SCALE = 25
 
+fileCount = 1
 
 
 
@@ -386,8 +387,6 @@ for i in range(compCount, len(ep_VT)):
 
 
 
-fileCount = 1
-
 # find third/forth connection on components if exists (transistor)
 for c in components:
     compMiddleX = round(c[0].x + ((c[1].x - c[0].x) / 2))
@@ -453,6 +452,7 @@ for c in components:
     # cv2.rectangle(img, (c[0][0], c[0][1]), (c[1][0], c[1][1]), (0,0,255), 5)
 
     componentImg = thresh[c[0][1]:c[1][1], c[0][0]:c[1][0]]
+    componentImg = cv2.erode(componentImg, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)))
     if c[2] == Orientation.VERTICAL:
         componentImg = rotateImage(componentImg, 90)
     cv2.imwrite(str(fileCount)+".jpg", cv2.resize(componentImg, (150,150)))

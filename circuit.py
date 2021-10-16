@@ -9,7 +9,7 @@ import os.path
 import random
 from datetime import datetime
 
-# from tensorflow import keras
+from tensorflow import keras
 
 # temporary imports
 import time
@@ -152,6 +152,11 @@ def resizeImage(src, percent: int):
 
 
 # ----- MAIN -----
+
+
+# load in CNN model
+model = keras.models.load_model("symbolsModel.h5")
+
 
 t1 = time.perf_counter()
 
@@ -384,7 +389,6 @@ for vb in ep_VB:
 for i in range(compCount, len(ep_VT)):
     solo_ep_VT.append(ep_VT[i])
 
-
 # find third/forth connection on components if exists (transistor)
 for c in components:
     compMiddleX = round(c[0].x + ((c[1].x - c[0].x) / 2))
@@ -449,36 +453,59 @@ for c in components:
     
     cv2.rectangle(img, (c[0][0], c[0][1]), (c[1][0], c[1][1]), (0,0,255), 5)
 
-    componentImg = img[c[0][1]:c[1][1], c[0][0]:c[1][0]]
+    componentImg = thresh[c[0][1]:c[1][1], c[0][0]:c[1][0]]
+
+    if c[2] == Orientation.VERTICAL:
+        componentImg = rotateImage(componentImg, 90)
+
+    cv2.waitKey(0)
+
+    componentImg = cv2.resize(componentImg, dsize=(150,150), interpolation=cv2.INTER_CUBIC)
+    componentImg = componentImg.reshape(-1, 150, 150, 1)
+    
+    # predict component with CNN
+    prediction = model.predict(componentImg)
+    bestPrediction = np.argmax(prediction[0])
+    bestPredictionValue = prediction[0][bestPrediction]
+    
+    componentImg = np.flip(componentImg, 1)
+    
+    prediction = model.predict(componentImg)
+
+    if prediction[0][np.argmax(prediction[0])] > bestPredictionValue:
+        bestPrediction = np.argmax(prediction[0])
+
+    if bestPrediction == 0:
+        cv2.putText(img, "battery", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
+    elif bestPrediction == 1:
+        cv2.putText(img, "capacitor", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
+    elif bestPrediction == 2:
+        cv2.putText(img, "diode", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
+    elif bestPrediction == 3:
+        cv2.putText(img, "inductor", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
+    elif bestPrediction == 4:
+        cv2.putText(img, "lamp", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
+    elif bestPrediction == 5:
+        cv2.putText(img, "resistor", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
+    elif bestPrediction == 6:
+        cv2.putText(img, "source_ac", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
+    elif bestPrediction == 7:
+        cv2.putText(img, "source_dc", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
+    elif bestPrediction == 8:
+        cv2.putText(img, "switch", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
+    elif bestPrediction == 9:
+        cv2.putText(img, "transistor_npn", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
+    elif bestPrediction == 10:
+        cv2.putText(img, "transistor_pnp", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
 
     # cv2.imshow("component", cv2.resize(componentImg, (150,150)))
     # cv2.waitKey(0)
 
-    # cv2.imshow("component", componentImg)
-
-
-# for ep in solo_ep_HL:
-#     cv2.circle(img, (ep.x, ep.y), 15, (255,0,0), -1)
-# for ep in solo_ep_HR:
-#     cv2.circle(img, (ep.x, ep.y), 15, (0,255,0), -1)
-# for ep in solo_ep_VT:
-#     cv2.circle(img, (ep.x, ep.y), 15, (255,0,0), -1)
-# for ep in solo_ep_VB:
-#     cv2.circle(img, (ep.x, ep.y), 15, (0,255,0), -1)
 
 
 
 
 
-# ============================== CNN ====================================
-# model = keras.models.load_model("symbolsModel.h5")
-
-# # thresh = cv2.resize(thresh, dsize=(100,100), interpolation=cv2.INTER_CUBIC)
-# prediction = model.predict(thresh)
-# if np.argmax(prediction[0]) == 0:
-#     print("inductor")
-# else:
-#     print("resistor")
 
 
 cv2.imshow("img", resizeImage(img, PICTURE_SCALE))
