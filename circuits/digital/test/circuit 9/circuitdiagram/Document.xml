@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<circuit version="1.4" xmlns="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document">
+	<properties>
+		<width>260</width>
+		<height>200</height>
+	</properties>
+	<definitions>
+		<src col="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/components/common">
+			<add id="0" item="resistor" p4:guid="dab6d52b-51a0-49b0-bc40-3cda966148aa" p4:version="4.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="1" item="inductor" p4:guid="e6ebc838-fb6a-4078-8d03-7fed04cc6938" p4:version="2.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="2" item="toggleswitch" p4:guid="421694bf-755a-4d50-b2ca-7273216ca17d" p4:version="1.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="3" item="battery" p4:guid="8979c617-b041-4069-8769-0b76dc0e6c52" p4:version="1.2.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+		</src>
+	</definitions>
+	<elements>
+		<w x="40" y="110" o="v" sz="60" flp="false" />
+		<w x="40" y="170" o="h" sz="70" flp="false" />
+		<w x="160" y="170" o="h" sz="60" flp="false" />
+		<w x="220" y="120" o="v" sz="50" flp="false" />
+		<w x="220" y="40" o="v" sz="30" flp="false" />
+		<w x="140" y="40" o="h" sz="80" flp="false" />
+		<w x="40" y="40" o="h" sz="70" flp="false" />
+		<w x="40" y="40" o="v" sz="40" flp="false" />
+		<c id="0" tp="{0}" x="110" y="170" o="h" sz="50" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="4700" />
+				<p k="showResistance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns>
+				<cn id="0" pt="a" />
+				<cn id="1" pt="b" />
+			</cns>
+		</c>
+		<c id="1" tp="{1}" x="220" y="70" o="v" sz="50" flp="false">
+			<prs>
+				<p k="text" v="" />
+				<p k="inductance" v="0.1" />
+				<p k="showInductance" v="False" />
+			</prs>
+			<cns>
+				<cn id="1" pt="b" />
+				<cn id="2" pt="a" />
+			</cns>
+		</c>
+		<c id="2" tp="{2}" x="110" y="40" o="h" sz="30" flp="false">
+			<prs>
+				<p k="t" v="Toggle" />
+				<p k="closed" v="False" />
+			</prs>
+			<cns>
+				<cn id="2" pt="b" />
+				<cn id="3" pt="a" />
+			</cns>
+		</c>
+		<c id="3" tp="{3}" x="40" y="80" o="v" sz="30" flp="true">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="False" />
+				<p k="t" v="Battery" />
+			</prs>
+			<cns>
+				<cn id="0" pt="pos" />
+				<cn id="3" pt="neg" />
+			</cns>
+		</c>
+	</elements>
+</circuit>

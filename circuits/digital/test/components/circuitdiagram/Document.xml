@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<circuit version="1.4" xmlns="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document">
+	<properties>
+		<width>4057</width>
+		<height>3058</height>
+	</properties>
+	<definitions>
+		<src col="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/components/common">
+			<add id="0" item="lamp" p4:guid="c0da4646-ffaf-48f0-8a56-2e8e07148ecf" p4:version="3.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="1" item="acsource" p4:guid="8979c617-b041-4069-8769-0b76dc0e6c52" p4:version="1.2.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="2" item="cell" p4:guid="8979c617-b041-4069-8769-0b76dc0e6c52" p4:version="1.2.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="3" item="transnpn" p4:guid="247a790e-c7aa-43ca-9e0c-c524257c0cd5" p4:version="1.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="4" item="transpnp" p4:guid="247a790e-c7aa-43ca-9e0c-c524257c0cd5" p4:version="1.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="5" item="inductor" p4:guid="e6ebc838-fb6a-4078-8d03-7fed04cc6938" p4:version="2.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="6" item="battery" p4:guid="8979c617-b041-4069-8769-0b76dc0e6c52" p4:version="1.2.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="7" item="toggleswitch" p4:guid="421694bf-755a-4d50-b2ca-7273216ca17d" p4:version="1.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="8" item="capacitor" p4:guid="154b7831-58e6-4126-b582-8c1cc2bdeb13" p4:version="4.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="9" item="resistor" p4:guid="dab6d52b-51a0-49b0-bc40-3cda966148aa" p4:version="4.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+		</src>
+		<src>
+			<add id="10" item="Standard Diode" p4:guid="099c5645-f7c6-4933-bed9-b0f4aa3f4a2a" p4:version="1.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+		</src>
+	</definitions>
+	<elements>
+		<c id="0" tp="{9}" x="2857" y="1340" o="h" sz="264" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="1" />
+				<p k="showResistance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns />
+		</c>
+		<c id="1" tp="{8}" x="421" y="1813" o="v" sz="107" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="capacitance" v="0.00000" />
+				<p k="showCapacitance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+		<cns />
+		</c>
+		<c id="2" tp="{6}" x="31" y="1789" o="v" sz="157" flp="false">
+			<prs>
+				<p k="voltage" v="5" />
+				<p k="frequency" v="50" />
+				<p k="showvoltage" v="False" />
+				<p k="t" v="Battery" />
+			</prs>
+			<cns />
+		</c>
+		<c id="3" tp="{8}" x="3184" y="1646" o="v" sz="109" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="capacitance" v="0.00000" />
+				<p k="showCapacitance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+		<cns />
+		</c>
+		<c id="4" tp="{9}" x="3177" y="1960" o="v" sz="265" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="1" />
+				<p k="showResistance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns />
+		</c>
+		<c id="5" tp="{8}" x="3849" y="1591" o="v" sz="109" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="capacitance" v="0.00000" />
+				<p k="showCapacitance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+		<cns />
+		</c>
+		<c id="6" tp="{9}" x="2631" y="1619" o="v" sz="266" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="1" />
+				<p k="showResistance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns />
+		</c>
+		<c id="7" tp="{4}" x="2639" y="1102" o="v" sz="175" flp="false">
+			<prs>
+				<p k="t" v="PNP" />
+			</prs>
+			<cns />
+		</c>
+		<c id="8" tp="{9}" x="2144" y="2264" o="v" sz="269" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="1" />
+				<p k="showResistance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns />
+		</c>
+		<c id="9" tp="{4}" x="1417" y="1497" o="v" sz="179" flp="false">
+			<prs>
+				<p k="t" v="PNP" />
+			</prs>
+			<cns />
+		</c>
+		<c id="10" tp="{9}" x="1399" y="938" o="v" sz="267" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="1" />
+				<p k="showResistance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns />
+		</c>
+		<c id="11" tp="{8}" x="2652" y="2440" o="v" sz="108" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="capacitance" v="0.00000" />
+				<p k="showCapacitance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+		<cns />
+		</c>
+		<c id="12" tp="{5}" x="1025" y="2160" o="v" sz="306" flp="false">
+			<prs>
+				<p k="text" v="" />
+				<p k="inductance" v="0.1" />
+				<p k="showInductance" v="False" />
+			</prs>
+			<cns />
+		</c>
+		<c id="13" tp="{8}" x="1071" y="1709" o="v" sz="108" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="capacitance" v="0.00000" />
+				<p k="showCapacitance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+		<cns />
+		</c>
+		<c id="14" tp="{8}" x="1563" y="2253" o="v" sz="108" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="capacitance" v="0.00000" />
+				<p k="showCapacitance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+		<cns />
+		</c>
+		<c id="15" tp="{9}" x="3158" y="741" o="v" sz="263" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="1" />
+				<p k="showResistance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns />
+		</c>
+	</elements>
+</circuit>
