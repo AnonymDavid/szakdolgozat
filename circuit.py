@@ -26,7 +26,7 @@ COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = 300
 COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = 16
 COMPONENT_MIN_BOX_SIZE = 150
 COMPONENT_BOX_SIZE_OFFSET = 40
-OUTPUT_SCALE = 6
+OUTPUT_SCALE = 2
 
 # temp:
 PICTURE_SCALE = 25
@@ -155,12 +155,10 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
 
     lineTemp = [[round(line.p1.x/OUTPUT_SCALE), round(line.p1.y/OUTPUT_SCALE)], [round(line.p2.x/OUTPUT_SCALE), round(line.p2.y/OUTPUT_SCALE)]]
     
-    print(lineTemp)
-    print(otherSideIdx)
     if lineIdx < horizontalCount:
         lineTemp[otherSideIdx][1] = lineTemp[1-otherSideIdx][1]
 
-        closestInterestDiff = 100
+        closestInterestDiff = 1000
         for olineC in range(len(outputLines)):
             interestDiff = abs(outputLines[olineC].p1.x - lineTemp[otherSideIdx][0])
             if interestDiff < closestInterestDiff:
@@ -177,7 +175,7 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
     else:
         lineTemp[otherSideIdx][0] = lineTemp[1-otherSideIdx][0]
 
-        closestInterestDiff = 100
+        closestInterestDiff = 1000
         for olineC in range(len(outputLines)):
             interestDiff = abs(outputLines[olineC].p1.y - lineTemp[otherSideIdx][1])
             if interestDiff < closestInterestDiff:
@@ -191,11 +189,10 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
         
         if closestInterestDiff < 10:
             lineTemp[otherSideIdx][1] = closestInterest
-    print(lineTemp)
-    print()
 
     outputLines.append(Line(Point(lineTemp[0][0], lineTemp[0][1]), Point(lineTemp[1][0], lineTemp[1][1])))
     checkedLines.append(lineIdx)
+    cv2.circle(img, (line[otherSideIdx].x, line[otherSideIdx].y), 20, (0,0,255), -1)
 
 
     for lineC in range(len(lines)):
@@ -207,7 +204,6 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
             samePoint = 1
         
         if samePoint != -1:
-            cv2.circle(img, (checkLine[1-samePoint].x, checkLine[1-samePoint].y), 20, (0,0,255), -1)
             followLine(lines, lineC, 1-samePoint, component_endpoints, checkedLines, outputLines, horizontalCount)
 
 
@@ -721,7 +717,13 @@ for c in components:
     
     cv2.rectangle(img, (c[0][0], c[0][1]), (c[1][0], c[1][1]), (255,0,255), 5)
 
-
+for i in range(len(lines)):
+    if not i in checkedLines:
+        cc = 0
+        while cc < len(components) and (lines[i].p1.x <= components[cc][0].x or lines[i].p1.x >= components[cc][1].x or lines[i].p1.y <= components[cc][0].y or lines[i].p1.y >= components[cc][1].y):
+            cc += 1
+        if cc >= len(components):
+            followLine(lines, i, 0, component_endpoints, checkedLines, outputLines, len(horizontal))
 
 for l in outputLines:
     cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 10)
