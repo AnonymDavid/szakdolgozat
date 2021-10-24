@@ -16,7 +16,7 @@ import time
 
 # ----- CONSTANTS ----- #TODO: all should be percent?
 CNT_DELETE_PERCENT = 15
-POINT_SIMILARITY_COMPARE_AREA_RADIUS = 10
+POINT_SIMILARITY_COMPARE_AREA_RADIUS = 15
 LINE_COUNT_CHECK_FOR_ROTATION = 10
 LINE_SEARCH_ANGLE_THRESHOLD = 5 # degrees, both ways
 LINE_CHECK_SIMILARITY_THRESHOLD = 15
@@ -26,7 +26,7 @@ COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = 300
 COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = 16
 COMPONENT_MIN_BOX_SIZE = 150
 COMPONENT_BOX_SIZE_OFFSET = 40
-OUTPUT_SCALE = 2
+OUTPUT_SCALE = 3
 
 # temp:
 PICTURE_SCALE = 25
@@ -153,10 +153,11 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
     
     line = lines[lineIdx]
 
-    lineTemp = [[round(line.p1.x/OUTPUT_SCALE), round(line.p1.y/OUTPUT_SCALE)], [round(line.p2.x/OUTPUT_SCALE), round(line.p2.y/OUTPUT_SCALE)]]
+    lineTemp = [[round(line.p1.x/OUTPUT_SCALE, -1), round(line.p1.y/OUTPUT_SCALE, -1)], [round(line.p2.x/OUTPUT_SCALE, -1), round(line.p2.y/OUTPUT_SCALE, -1)]]
     
     if lineIdx < horizontalCount:
         lineTemp[otherSideIdx][1] = lineTemp[1-otherSideIdx][1]
+            
 
         closestInterestDiff = 1000
         for olineC in range(len(outputLines)):
@@ -190,17 +191,16 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
         if closestInterestDiff < 10:
             lineTemp[otherSideIdx][1] = closestInterest
 
-    outputLines.append(Line(Point(lineTemp[0][0], lineTemp[0][1]), Point(lineTemp[1][0], lineTemp[1][1])))
+    outputLines.append(Line(Point(round(lineTemp[0][0]), round(lineTemp[0][1])), Point(round(lineTemp[1][0]), round(lineTemp[1][1]))))
     checkedLines.append(lineIdx)
-    cv2.circle(img, (line[otherSideIdx].x, line[otherSideIdx].y), 20, (0,0,255), -1)
 
 
     for lineC in range(len(lines)):
         checkLine = lines[lineC]
         samePoint = -1
-        if isSamePoint(line[otherSideIdx], checkLine.p1, 20):
+        if isSamePoint(line[otherSideIdx], checkLine.p1, 40):
             samePoint = 0
-        elif isSamePoint(line[otherSideIdx], checkLine.p2, 20):
+        elif isSamePoint(line[otherSideIdx], checkLine.p2, 40):
             samePoint = 1
         
         if samePoint != -1:
@@ -465,6 +465,8 @@ file.write(
 	'\t<elements>\n'
 )
 
+checkedLines = []
+outputLines = []
 componentId = 0
 # find third/forth connection on components if exists (transistor)
 for c in components:
@@ -558,12 +560,13 @@ for c in components:
     if prediction[0][np.argmax(prediction[0])] > bestPredictionValue:
         bestPrediction = np.argmax(prediction[0])
 
-    compOutputPos = Point(round(c[0][0]/OUTPUT_SCALE), round(c[0][1]/OUTPUT_SCALE))
+    compOutputPos = Point(round(round(c[3][0]/OUTPUT_SCALE, -1)), round(round(c[3][1]/OUTPUT_SCALE, -1)))
+    compOutputSize = round(round((abs(c[4][0]-c[3][0]) if c[2] == Orientation.HORIZONTAL else abs(c[4][1]-c[3][1]))/OUTPUT_SCALE, -1))
 
     if bestPrediction == 0:
         cv2.putText(img, "battery", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
         file.write(
-            '\t\t<c id="'+str(componentId)+'" tp="{6}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(c[1][0]-c[0][0] if c[2] == Orientation.HORIZONTAL else c[1][1]-c[0][1])+'" flp="false">\n'
+            '\t\t<c id="'+str(componentId)+'" tp="{6}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(compOutputSize)+'" flp="false">\n'
             '\t\t\t<prs>\n'
             '\t\t\t\t<p k="voltage" v="5" />\n'
             '\t\t\t\t<p k="frequency" v="50" />\n'
@@ -576,7 +579,7 @@ for c in components:
     elif bestPrediction == 1:
         cv2.putText(img, "capacitor", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
         file.write(
-            '\t\t<c id="'+str(componentId)+'" tp="{8}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(c[1][0]-c[0][0] if c[2] == Orientation.HORIZONTAL else c[1][1]-c[0][1])+'" flp="false">\n'
+            '\t\t<c id="'+str(componentId)+'" tp="{8}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(compOutputSize)+'" flp="false">\n'
             '\t\t\t<prs>\n'
             '\t\t\t\t<p k="style" v="IEC" />\n'
             '\t\t\t\t<p k="text" v="" />\n'
@@ -590,7 +593,7 @@ for c in components:
     elif bestPrediction == 2:
         cv2.putText(img, "diode", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
         file.write(
-            '\t\t<c id="'+str(componentId)+'" tp="{10}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(c[1][0]-c[0][0] if c[2] == Orientation.HORIZONTAL else c[1][1]-c[0][1])+'" flp="false">\n'
+            '\t\t<c id="'+str(componentId)+'" tp="{10}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(compOutputSize)+'" flp="false">\n'
             '\t\t\t<prs>\n'
             '\t\t\t</prs>\n'
             '\t\t\t<cns />\n'
@@ -599,7 +602,7 @@ for c in components:
     elif bestPrediction == 3:
         cv2.putText(img, "inductor", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
         file.write(
-            '\t\t<c id="'+str(componentId)+'" tp="{5}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(c[1][0]-c[0][0] if c[2] == Orientation.HORIZONTAL else c[1][1]-c[0][1])+'" flp="false">\n'
+            '\t\t<c id="'+str(componentId)+'" tp="{5}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(compOutputSize)+'" flp="false">\n'
             '\t\t\t<prs>\n'
             '\t\t\t\t<p k="text" v="" />\n'
 			'\t\t\t\t<p k="inductance" v="0.1" />\n'
@@ -611,7 +614,7 @@ for c in components:
     elif bestPrediction == 4:
         cv2.putText(img, "lamp", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
         file.write(
-            '\t\t<c id="'+str(componentId)+'" tp="{0}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(c[1][0]-c[0][0] if c[2] == Orientation.HORIZONTAL else c[1][1]-c[0][1])+'" flp="false">\n'
+            '\t\t<c id="'+str(componentId)+'" tp="{0}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(compOutputSize)+'" flp="false">\n'
             '\t\t\t<prs>\n'
             '\t\t\t\t<p k="t" v="Generic" />\n'
 			'\t\t\t\t<p k="islit" v="False" />\n'
@@ -622,7 +625,7 @@ for c in components:
     elif bestPrediction == 5:
         cv2.putText(img, "resistor", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
         file.write(
-            '\t\t<c id="'+str(componentId)+'" tp="{9}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(c[1][0]-c[0][0] if c[2] == Orientation.HORIZONTAL else c[1][1]-c[0][1])+'" flp="false">\n'
+            '\t\t<c id="'+str(componentId)+'" tp="{9}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(compOutputSize)+'" flp="false">\n'
             '\t\t\t<prs>\n'
 			'\t\t\t\t<p k="style" v="IEC" />\n'
 			'\t\t\t\t<p k="text" v="" />\n'
@@ -636,7 +639,7 @@ for c in components:
     elif bestPrediction == 6:
         cv2.putText(img, "source_ac", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
         file.write(
-            '\t\t<c id="'+str(componentId)+'" tp="{1}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(c[1][0]-c[0][0] if c[2] == Orientation.HORIZONTAL else c[1][1]-c[0][1])+'" flp="false">\n'
+            '\t\t<c id="'+str(componentId)+'" tp="{1}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(compOutputSize)+'" flp="false">\n'
             '\t\t\t<prs>\n'
 			'\t\t\t\t<p k="voltage" v="1" />\n'
 			'\t\t\t\t<p k="frequency" v="1" />\n'
@@ -649,7 +652,7 @@ for c in components:
     elif bestPrediction == 7:
         cv2.putText(img, "source_dc", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
         file.write(
-            '\t\t<c id="'+str(componentId)+'" tp="{2}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(c[1][0]-c[0][0] if c[2] == Orientation.HORIZONTAL else c[1][1]-c[0][1])+'" flp="false">\n'
+            '\t\t<c id="'+str(componentId)+'" tp="{2}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(compOutputSize)+'" flp="false">\n'
             '\t\t\t<prs>\n'
 			'\t\t\t\t<p k="voltage" v="1" />\n'
 			'\t\t\t\t<p k="frequency" v="1" />\n'
@@ -662,7 +665,7 @@ for c in components:
     elif bestPrediction == 8:
         cv2.putText(img, "switch", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
         file.write(
-            '\t\t<c id="'+str(componentId)+'" tp="{7}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(c[1][0]-c[0][0] if c[2] == Orientation.HORIZONTAL else c[1][1]-c[0][1])+'" flp="false">\n'
+            '\t\t<c id="'+str(componentId)+'" tp="{7}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(compOutputSize)+'" flp="false">\n'
             '\t\t\t<prs>\n'
 			'\t\t\t\t<p k="t" v="Toggle" />\n'
 			'\t\t\t\t<p k="closed" v="False" />\n'
@@ -673,7 +676,7 @@ for c in components:
     elif bestPrediction == 9:
         cv2.putText(img, "transistor_npn", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
         file.write(
-            '\t\t<c id="'+str(componentId)+'" tp="{3}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(c[1][0]-c[0][0] if c[2] == Orientation.HORIZONTAL else c[1][1]-c[0][1])+'" flp="false">\n'
+            '\t\t<c id="'+str(componentId)+'" tp="{3}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(compOutputSize)+'" flp="false">\n'
             '\t\t\t<prs>\n'
 			'\t\t\t\t<p k="t" v="NPN" />\n'
             '\t\t\t</prs>\n'
@@ -683,7 +686,7 @@ for c in components:
     elif bestPrediction == 10:
         cv2.putText(img, "transistor_pnp", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
         file.write(
-            '\t\t<c id="'+str(componentId)+'" tp="{4}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(c[1][0]-c[0][0] if c[2] == Orientation.HORIZONTAL else c[1][1]-c[0][1])+'" flp="false">\n'
+            '\t\t<c id="'+str(componentId)+'" tp="{4}" x="'+str(compOutputPos.x)+'" y="'+str(compOutputPos.y)+'" o="'+('h' if c[2] == Orientation.HORIZONTAL else 'v')+'" sz="'+str(compOutputSize)+'" flp="false">\n'
             '\t\t\t<prs>\n'
 			'\t\t\t\t<p k="t" v="PNP" />\n'
             '\t\t\t</prs>\n'
@@ -697,8 +700,6 @@ for c in components:
     # cv2.waitKey(0)
 
 
-checkedLines = []
-outputLines = []
 for c in components:
     for i in range(len(lines)):
         line = lines[i]
@@ -727,6 +728,8 @@ for i in range(len(lines)):
 
 for l in outputLines:
     cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 10)
+
+    file.write('<w x="'+str(l.p1.x)+'" y="'+str(l.p1.y)+'" o="'+str("h" if abs(l.p2.x - l.p1.x) - abs(l.p2.y - l.p1.y) > 0 else "v")+'" sz="'+str(abs(l.p2.x - l.p1.x) if abs(l.p2.x - l.p1.x) - abs(l.p2.y - l.p1.y) > 0 else abs(l.p2.y - l.p1.y))+'" flp="false" />\n')
 
 for l in lines:
     cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 4)

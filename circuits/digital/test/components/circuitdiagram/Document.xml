@@ -22,7 +22,7 @@
 		</src>
 	</definitions>
 	<elements>
-		<c id="0" tp="{9}" x="476" y="223" o="h" sz="264" flp="false">
+		<c id="0" tp="{9}" x="970" y="480" o="h" sz="60" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -32,7 +32,7 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="1" tp="{8}" x="70" y="302" o="v" sz="107" flp="false">
+		<c id="1" tp="{8}" x="170" y="620" o="v" sz="10" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -42,7 +42,7 @@
 			</prs>
 		<cns />
 		</c>
-		<c id="2" tp="{6}" x="5" y="298" o="v" sz="157" flp="false">
+		<c id="2" tp="{6}" x="40" y="610" o="v" sz="30" flp="false">
 			<prs>
 				<p k="voltage" v="5" />
 				<p k="frequency" v="50" />
@@ -51,7 +51,7 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="3" tp="{8}" x="531" y="274" o="v" sz="109" flp="false">
+		<c id="3" tp="{8}" x="1090" y="560" o="v" sz="10" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -61,7 +61,7 @@
 			</prs>
 		<cns />
 		</c>
-		<c id="4" tp="{9}" x="530" y="327" o="v" sz="265" flp="false">
+		<c id="4" tp="{9}" x="1090" y="670" o="v" sz="60" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -71,7 +71,7 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="5" tp="{8}" x="642" y="265" o="v" sz="109" flp="false">
+		<c id="5" tp="{8}" x="1310" y="540" o="v" sz="10" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -81,7 +81,7 @@
 			</prs>
 		<cns />
 		</c>
-		<c id="6" tp="{9}" x="438" y="270" o="v" sz="266" flp="false">
+		<c id="6" tp="{9}" x="910" y="550" o="v" sz="60" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -91,13 +91,13 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="7" tp="{4}" x="440" y="184" o="v" sz="175" flp="false">
+		<c id="7" tp="{4}" x="900" y="380" o="v" sz="30" flp="false">
 			<prs>
 				<p k="t" v="PNP" />
 			</prs>
 			<cns />
 		</c>
-		<c id="8" tp="{9}" x="357" y="377" o="v" sz="269" flp="false">
+		<c id="8" tp="{9}" x="750" y="770" o="v" sz="60" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -107,13 +107,13 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="9" tp="{4}" x="236" y="250" o="v" sz="179" flp="false">
+		<c id="9" tp="{4}" x="500" y="510" o="v" sz="30" flp="false">
 			<prs>
 				<p k="t" v="PNP" />
 			</prs>
 			<cns />
 		</c>
-		<c id="10" tp="{9}" x="233" y="156" o="v" sz="267" flp="false">
+		<c id="10" tp="{9}" x="500" y="330" o="v" sz="60" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -123,7 +123,7 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="11" tp="{8}" x="442" y="407" o="v" sz="108" flp="false">
+		<c id="11" tp="{8}" x="910" y="830" o="v" sz="10" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -133,7 +133,7 @@
 			</prs>
 		<cns />
 		</c>
-		<c id="12" tp="{5}" x="171" y="360" o="v" sz="306" flp="false">
+		<c id="12" tp="{5}" x="380" y="730" o="v" sz="80" flp="false">
 			<prs>
 				<p k="text" v="" />
 				<p k="inductance" v="0.1" />
@@ -141,7 +141,7 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="13" tp="{8}" x="178" y="285" o="v" sz="108" flp="false">
+		<c id="13" tp="{8}" x="380" y="580" o="v" sz="10" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -151,7 +151,7 @@
 			</prs>
 		<cns />
 		</c>
-		<c id="14" tp="{8}" x="260" y="376" o="v" sz="108" flp="false">
+		<c id="14" tp="{8}" x="550" y="760" o="v" sz="10" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -161,7 +161,7 @@
 			</prs>
 		<cns />
 		</c>
-		<c id="15" tp="{9}" x="526" y="124" o="v" sz="263" flp="false">
+		<c id="15" tp="{9}" x="1080" y="260" o="v" sz="60" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -171,5 +171,47 @@
 			</prs>
 			<cns />
 		</c>
+<w x="910" y="480" o="h" sz="60" flp="false" />
+<w x="1030" y="480" o="h" sz="50" flp="false" />
+<w x="170" y="220" o="v" sz="400" flp="false" />
+<w x="160" y="630" o="v" sz="310" flp="false" />
+<w x="170" y="930" o="h" sz="1070" flp="false" />
+<w x="40" y="930" o="h" sz="120" flp="false" />
+<w x="40" y="640" o="v" sz="290" flp="false" />
+<w x="40" y="220" o="v" sz="390" flp="false" />
+<w x="40" y="220" o="h" sz="1260" flp="false" />
+<w x="1300" y="220" o="v" sz="320" flp="false" />
+<w x="1310" y="550" o="v" sz="360" flp="false" />
+<w x="1140" y="910" o="h" sz="170" flp="false" />
+<w x="1310" y="480" o="v" sz="60" flp="false" />
+<w x="1090" y="320" o="v" sz="240" flp="false" />
+<w x="1070" y="260" o="v" sz="60" flp="false" />
+<w x="1090" y="570" o="v" sz="100" flp="false" />
+<w x="1100" y="660" o="v" sz="70" flp="false" />
+<w x="1090" y="730" o="v" sz="190" flp="false" />
+<w x="910" y="410" o="v" sz="140" flp="false" />
+<w x="910" y="620" o="v" sz="210" flp="false" />
+<w x="910" y="840" o="v" sz="80" flp="false" />
+<w x="930" y="390" o="h" sz="150" flp="false" />
+<w x="900" y="220" o="v" sz="160" flp="false" />
+<w x="750" y="530" o="v" sz="240" flp="false" />
+<w x="520" y="530" o="h" sz="220" flp="false" />
+<w x="750" y="830" o="v" sz="90" flp="false" />
+<w x="500" y="550" o="v" sz="130" flp="false" />
+<w x="380" y="680" o="h" sz="120" flp="false" />
+<w x="500" y="680" o="h" sz="50" flp="false" />
+<w x="550" y="680" o="v" sz="80" flp="false" />
+<w x="550" y="770" o="v" sz="90" flp="false" />
+<w x="380" y="860" o="h" sz="170" flp="false" />
+<w x="380" y="810" o="v" sz="60" flp="false" />
+<w x="500" y="390" o="v" sz="120" flp="false" />
+<w x="510" y="320" o="v" sz="70" flp="false" />
+<w x="500" y="220" o="v" sz="110" flp="false" />
+<w x="380" y="590" o="v" sz="140" flp="false" />
+<w x="380" y="450" o="v" sz="130" flp="false" />
+<w x="380" y="450" o="h" sz="120" flp="false" />
+<w x="1080" y="220" o="v" sz="40" flp="false" />
+<w x="750" y="710" o="h" sz="160" flp="false" />
+<w x="460" y="860" o="v" sz="70" flp="false" />
 	</elements>
 </circuit>
