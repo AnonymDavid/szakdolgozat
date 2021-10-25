@@ -6,12 +6,12 @@ from enum import Enum
 import math
 import sys
 import os.path
+from zipfile import ZipFile
 import random
 from datetime import datetime
 
 from tensorflow import keras
 
-# temporary imports
 import time
 
 # ----- CONSTANTS ----- #TODO: all should be percent?
@@ -26,6 +26,7 @@ COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = 300
 COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = 16
 COMPONENT_MIN_BOX_SIZE = 150
 COMPONENT_BOX_SIZE_OFFSET = 40
+OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = 30
 OUTPUT_SCALE = 3
 
 # temp:
@@ -152,13 +153,24 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
         return
     
     line = lines[lineIdx]
-
-    lineTemp = [[round(line.p1.x/OUTPUT_SCALE, -1), round(line.p1.y/OUTPUT_SCALE, -1)], [round(line.p2.x/OUTPUT_SCALE, -1), round(line.p2.y/OUTPUT_SCALE, -1)]]
-    
-    if lineIdx < horizontalCount:
-        lineTemp[otherSideIdx][1] = lineTemp[1-otherSideIdx][1]
             
 
+    lineTemp = [[round(line.p1.x/OUTPUT_SCALE, -1), round(line.p1.y/OUTPUT_SCALE, -1)], [round(line.p2.x/OUTPUT_SCALE, -1), round(line.p2.y/OUTPUT_SCALE, -1)]]
+
+    compEpCount = 0
+    lineCompSide = -1
+    while compEpCount < len(component_endpoints) and lineCompSide == -1:
+        if isSamePoint(line.p1, component_endpoints[compEpCount], POINT_SIMILARITY_COMPARE_AREA_RADIUS):
+            lineCompSide = 0
+        elif isSamePoint(line.p2, component_endpoints[compEpCount], POINT_SIMILARITY_COMPARE_AREA_RADIUS):
+            lineCompSide = 1
+        else:
+            compEpCount += 1
+    
+    if compEpCount < len(component_endpoints):
+        lineTemp[lineCompSide] = [round(component_endpoints[compEpCount].x/OUTPUT_SCALE, -1), round(component_endpoints[compEpCount].y/OUTPUT_SCALE, -1)]
+    
+    if lineIdx < horizontalCount:
         closestInterestDiff = 1000
         for olineC in range(len(outputLines)):
             interestDiff = abs(outputLines[olineC].p1.x - lineTemp[otherSideIdx][0])
@@ -173,9 +185,12 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
         
         if closestInterestDiff < 10:
             lineTemp[otherSideIdx][0] = closestInterest
+        
+        if lineCompSide == -1:
+            lineTemp[otherSideIdx][1] = lineTemp[1-otherSideIdx][1]
+        else:
+            lineTemp[lineCompSide][1] = lineTemp[1-lineCompSide][1]
     else:
-        lineTemp[otherSideIdx][0] = lineTemp[1-otherSideIdx][0]
-
         closestInterestDiff = 1000
         for olineC in range(len(outputLines)):
             interestDiff = abs(outputLines[olineC].p1.y - lineTemp[otherSideIdx][1])
@@ -190,6 +205,11 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
         
         if closestInterestDiff < 10:
             lineTemp[otherSideIdx][1] = closestInterest
+        
+        if lineCompSide == -1:
+            lineTemp[otherSideIdx][0] = lineTemp[1-otherSideIdx][0]
+        else:
+            lineTemp[lineCompSide][0] = lineTemp[1-lineCompSide][0]
 
     outputLines.append(Line(Point(round(lineTemp[0][0]), round(lineTemp[0][1])), Point(round(lineTemp[1][0]), round(lineTemp[1][1]))))
     checkedLines.append(lineIdx)
@@ -198,13 +218,22 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
     for lineC in range(len(lines)):
         checkLine = lines[lineC]
         samePoint = -1
-        if isSamePoint(line[otherSideIdx], checkLine.p1, 40):
+        if isSamePoint(line[otherSideIdx], checkLine.p1, OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS):
             samePoint = 0
-        elif isSamePoint(line[otherSideIdx], checkLine.p2, 40):
+        elif isSamePoint(line[otherSideIdx], checkLine.p2, OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS):
             samePoint = 1
         
         if samePoint != -1:
             followLine(lines, lineC, 1-samePoint, component_endpoints, checkedLines, outputLines, horizontalCount)
+
+def createDirectoryTree():
+    filenames = ["output/_rels/", "output/circuitdiagram/", "output/docProps/"]
+    for filename in filenames:
+        if not os.path.exists(os.path.dirname(filename)):
+            try:
+                os.makedirs(os.path.dirname(filename))
+            except:
+                print("Cannot create directories for output!")
 
 
 
@@ -435,7 +464,9 @@ for i in range(compCount, len(ep_VT)):
 
 
 # start output file
-file = open("Document.xml", "w", newline='')
+createDirectoryTree()
+
+file = open("output/circuitdiagram/Document.xml", "w", newline='')
 file.write(
     '<?xml version="1.0" encoding="utf-8"?>\n'
     '<circuit version="1.4" xmlns="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document">\n'
@@ -756,9 +787,31 @@ file.write(
 
 file.close()
 
+# rest of the files
+
+file = open("output/_rels/.rels", "w", newline='')
+file.write('<?xml version="1.0" encoding="utf-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Type="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/relationships/circuitDiagramDocument" Target="/circuitdiagram/Document.xml" Id="Rd91fbf4e19c745a9" /><Relationship Type="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/relationships/metadata/core-properties" Target="/docProps/core.xml" Id="Rd87aec61287b48ef" /></Relationships>')
+file.close()
+
+file = open("output/docProps/core.xml", "w", newline='')
+file.write('\
+<?xml version="1.0" encoding="utf-8"?>\n\
+<coreProperties xmlns="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/metadata/core-properties">\n\
+	<date xmlns="http://purl.org/dc/terms/">2021-10-20 08:12:45Z</date>\n\
+</coreProperties>\
+')
+file.close()
+
+file = open("output/[Content_Types].xml", "w", newline='')
+file.write('<?xml version="1.0" encoding="utf-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/vnd.circuitdiagram.document.main+xml" /><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml" /><Override PartName="/docProps/core.xml" ContentType="application/vnd.circuitdiagram.document.core-properties+xml" /></Types>')
+file.close()
 
 
-
+with ZipFile('output.cddx', mode='w') as zf:
+    zf.write("output/_rels/.rels", "_rels/.rels")
+    zf.write("output/circuitdiagram/Document.xml", "circuitdiagram/Document.xml")
+    zf.write("output/docProps/core.xml", "docProps/core.xml")
+    zf.write("output/[Content_Types].xml", "[Content_Types].xml")
 
 
 
