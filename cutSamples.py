@@ -9,14 +9,12 @@ import os.path
 import random
 from datetime import datetime
 
-# from tensorflow import keras
-
-# temporary imports
 import time
 
 # ----- CONSTANTS ----- #TODO: all should be percent?
 CNT_DELETE_PERCENT = 15
-POINT_SIMILARITY_COMPARE_AREA_RADIUS = 10
+POINT_SIMILARITY_COMPARE_AREA_RADIUS = 15
+LINE_MIN_LENGTH = 110
 LINE_COUNT_CHECK_FOR_ROTATION = 10
 LINE_SEARCH_ANGLE_THRESHOLD = 5 # degrees, both ways
 LINE_CHECK_SIMILARITY_THRESHOLD = 15
@@ -24,13 +22,14 @@ LINE_AGGREGATION_SIMILARITY_THRESHOLD = 25
 COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = 50
 COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = 300
 COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = 16
-COMPONENT_MIN_BOX_SIZE = 200
-COMPONENT_BOX_SIZE_OFFSET = 40
+COMPONENT_MIN_BOX_SIZE = 230
+COMPONENT_BOX_SIZE_OFFSET = 60
+OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = 30
+OUTPUT_SCALE = 3
 
 # temp:
 PICTURE_SCALE = 25
 
-fileCount = 1
 
 
 
@@ -47,8 +46,7 @@ class Point(NamedTuple):
     x: int
     y: int
 
-@dataclass
-class Line:
+class Line(NamedTuple):
     p1: Point
     p2: Point
 
@@ -112,16 +110,16 @@ def isSameLine(l1: Line, l2: Line) -> bool:
         return True
     return False
 
-def isSamePoint(p1: Point, p2: Point) -> bool:
+def isSamePoint(p1: Point, p2: Point, threshold: int) -> bool:
     """Check if the given points are the same based on an area threshold constant."""
-    if abs(p1.x - p2.x) < POINT_SIMILARITY_COMPARE_AREA_RADIUS and abs(p1.y - p2.y) < POINT_SIMILARITY_COMPARE_AREA_RADIUS:
+    if abs(p1.x - p2.x) < threshold and abs(p1.y - p2.y) < threshold:
         return True
     return False
 
 def pointsCloseArray(p1: Point, points: List[Point]) -> int:
     """Check if the given point is close to another in the array."""
     for i in range(len(points)):
-        if isSamePoint(p1, points[i]):
+        if isSamePoint(p1, points[i], POINT_SIMILARITY_COMPARE_AREA_RADIUS):
             return i
     return -1
 
@@ -147,12 +145,92 @@ def rotateImage(image, angle: int):
 
 def resizeImage(src, percent: int):
     return cv2.resize(src, (int(src.shape[1]*percent/100), int(src.shape[0]*percent/100)))
+
+def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, outputLines, horizontalCount):
+    if lineIdx in checkedLines:
+        return
     
+    line = lines[lineIdx]
+            
+
+    lineTemp = [[round(line.p1.x/OUTPUT_SCALE, -1), round(line.p1.y/OUTPUT_SCALE, -1)], [round(line.p2.x/OUTPUT_SCALE, -1), round(line.p2.y/OUTPUT_SCALE, -1)]]
+
+    compEpCount = 0
+    lineCompSide = -1
+    while compEpCount < len(component_endpoints) and lineCompSide == -1:
+        if isSamePoint(line.p1, component_endpoints[compEpCount], POINT_SIMILARITY_COMPARE_AREA_RADIUS):
+            lineCompSide = 0
+        elif isSamePoint(line.p2, component_endpoints[compEpCount], POINT_SIMILARITY_COMPARE_AREA_RADIUS):
+            lineCompSide = 1
+        else:
+            compEpCount += 1
+    
+    if compEpCount < len(component_endpoints):
+        lineTemp[lineCompSide] = [round(round(component_endpoints[compEpCount].x/OUTPUT_SCALE, -1)), round(round(component_endpoints[compEpCount].y/OUTPUT_SCALE, -1))]
+    
+    if lineIdx < horizontalCount:
+        closestInterestDiff = 1000
+        for olineC in range(len(outputLines)):
+            interestDiff = abs(outputLines[olineC].p1.x - lineTemp[otherSideIdx][0])
+            if interestDiff < closestInterestDiff:
+                closestInterestDiff = interestDiff
+                closestInterest = outputLines[olineC].p1.x
+            
+            interestDiff = abs(outputLines[olineC].p2.x - lineTemp[otherSideIdx][0])
+            if interestDiff < closestInterestDiff:
+                closestInterestDiff = interestDiff
+                closestInterest = outputLines[olineC].p2.x
+        
+        if closestInterestDiff < 10:
+            lineTemp[otherSideIdx][0] = closestInterest
+        
+        if lineCompSide == -1:
+            lineTemp[otherSideIdx][1] = lineTemp[1-otherSideIdx][1]
+        else:
+            lineTemp[1-lineCompSide][1] = lineTemp[lineCompSide][1]
+    else:
+        closestInterestDiff = 1000
+        for olineC in range(len(outputLines)):
+            interestDiff = abs(outputLines[olineC].p1.y - lineTemp[otherSideIdx][1])
+            if interestDiff < closestInterestDiff:
+                closestInterestDiff = interestDiff
+                closestInterest = outputLines[olineC].p1.y
+            
+            interestDiff = abs(outputLines[olineC].p2.y - lineTemp[otherSideIdx][1])
+            if interestDiff < closestInterestDiff:
+                closestInterestDiff = interestDiff
+                closestInterest = outputLines[olineC].p2.y
+        
+        if closestInterestDiff < 10:
+            lineTemp[otherSideIdx][1] = closestInterest
+        
+        if lineCompSide == -1:
+            lineTemp[otherSideIdx][0] = lineTemp[1-otherSideIdx][0]
+        else:
+            lineTemp[1-lineCompSide][0] = lineTemp[lineCompSide][0]
+
+    outputLines.append(Line(Point(round(lineTemp[0][0]), round(lineTemp[0][1])), Point(round(lineTemp[1][0]), round(lineTemp[1][1]))))
+    checkedLines.append(lineIdx)
+
+
+    for lineC in range(len(lines)):
+        checkLine = lines[lineC]
+        samePoint = -1
+        if isSamePoint(line[otherSideIdx], checkLine.p1, OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS):
+            samePoint = 0
+        elif isSamePoint(line[otherSideIdx], checkLine.p2, OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS):
+            samePoint = 1
+        
+        if samePoint != -1:
+            followLine(lines, lineC, 1-samePoint, component_endpoints, checkedLines, outputLines, horizontalCount)
 
 
 
 
 # ----- MAIN -----
+
+
+# load in CNN model
 
 t1 = time.perf_counter()
 
@@ -176,7 +254,7 @@ thresh = 255 - thresh
 
 
 # ROTATE VIA LONGEST LINES AVG ANGLE
-linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, 50, 0))
+linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, LINE_MIN_LENGTH, 0))
 
 if linesP is None:
     exit("No lines detected")
@@ -187,9 +265,9 @@ avgAngleDiff = 0
 linesP = convertHoughToLineList(linesP)
 
 rotatelines = []
-checkedLineCount = 1
-differentLineCount = 1
-rotatelines.append(linesP[0])
+checkedLineCount = 0
+differentLineCount = 0
+# rotatelines.append(linesP[0])
 
 while checkedLineCount < len(linesP) and differentLineCount < LINE_COUNT_CHECK_FOR_ROTATION:
     line = linesP[checkedLineCount]
@@ -202,7 +280,10 @@ while checkedLineCount < len(linesP) and differentLineCount < LINE_COUNT_CHECK_F
         if (angle > 45):
             angle = angle - 90
         
-        currentDiffWithAvg = abs((avgAngleDiff/differentLineCount) - angle)
+        if differentLineCount <= 1:
+            currentDiffWithAvg = 0
+        else:
+            currentDiffWithAvg = abs((avgAngleDiff/differentLineCount) - angle)
         
         if abs(currentDiffWithAvg - int(currentDiffWithAvg / 90) * 90) <= 20:
             avgAngleDiff += angle
@@ -219,7 +300,7 @@ img = rotateImage(img, avgAngleDiff)
 
 
 # finding connection lines
-linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, 110, 0))
+linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, LINE_MIN_LENGTH, 0))
 if linesP is None:
     exit("No lines detected")
 
@@ -276,7 +357,6 @@ for line in linesP:
 lines = horizontal + vertical
 
 # finding and separating line endpoints
-endpoints = []
 
 ep_HL = []
 ep_HR = []
@@ -285,38 +365,19 @@ ep_VB = []
 
 for line in horizontal:
     if line.p1.x < line.p2.x:
-        endpoints.append(Endpoint(line.p1, Orientation.HORIZONTAL_LEFT))
-        endpoints.append(Endpoint(line.p2, Orientation.HORIZONTAL_RIGHT))
-
         ep_HL.append(line.p1)
         ep_HR.append(line.p2)
     else:
-        endpoints.append(Endpoint(line.p1, Orientation.HORIZONTAL_RIGHT))
-        endpoints.append(Endpoint(line.p2, Orientation.HORIZONTAL_LEFT))
-        
         ep_HL.append(line.p2)
         ep_HR.append(line.p1)
 
 for line in vertical:
     if line.p1.y < line.p2.y:
-        endpoints.append(Endpoint(line.p1, Orientation.VERTICAL_TOP))
-        endpoints.append(Endpoint(line.p2, Orientation.VERTICAL_BOT))
-
         ep_VT.append(line.p1)
         ep_VB.append(line.p2)
     else:
-        endpoints.append(Endpoint(line.p1, Orientation.VERTICAL_BOT))
-        endpoints.append(Endpoint(line.p2, Orientation.VERTICAL_TOP))
-
         ep_VT.append(line.p2)
         ep_VB.append(line.p1)
-
-
-# for l in lines:
-#     cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 4)
-
-# for ep in endpoints:
-#     cv2.circle(img, (ep.point.x, ep.point.y), 12, (255,0,255), -1)
 
 
 # finding components
@@ -327,6 +388,7 @@ solo_ep_VT = []
 solo_ep_VB = []
 
 components = []
+component_endpoints = []
 compCount = 0
 
 # horizontal components
@@ -346,7 +408,10 @@ for hr in ep_HR:
         compSize = ep_HL[hlc].x - hr.x
         if compSize < COMPONENT_MIN_BOX_SIZE:
             compSize = COMPONENT_MIN_BOX_SIZE
-        components.append([Point(hr.x - COMPONENT_BOX_SIZE_OFFSET, hr.y - round(compSize/2)), Point(ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET, ep_HL[hlc].y + round(compSize / 2)), Orientation.HORIZONTAL])
+        components.append([Point(hr.x - COMPONENT_BOX_SIZE_OFFSET, hr.y - round(compSize/2)), Point(ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET, ep_HL[hlc].y + round(compSize / 2)), Orientation.HORIZONTAL, Point(hr.x, hr.y), Point(ep_HL[hlc].x, ep_HL[hlc].y), Point(-1, -1)])
+        component_endpoints.append(Point(hr.x, hr.y))
+        component_endpoints.append(Point(hr.x, ep_HL[hlc].y))
+
         ep_HL[compCount], ep_HL[hlc] = ep_HL[hlc], ep_HL[compCount]
         compCount += 1
     else:
@@ -376,7 +441,10 @@ for vb in ep_VB:
         if compSize < COMPONENT_MIN_BOX_SIZE:
             compSize = COMPONENT_MIN_BOX_SIZE
         
-        components.append([Point(vb.x - round(compSize/2), vb.y - COMPONENT_BOX_SIZE_OFFSET), Point(ep_VT[vtc].x + round(compSize / 2), ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET), Orientation.VERTICAL])
+        components.append([Point(vb.x - round(compSize/2), vb.y - COMPONENT_BOX_SIZE_OFFSET), Point(ep_VT[vtc].x + round(compSize / 2), ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET), Orientation.VERTICAL, Point(vb.x, vb.y), Point(ep_VT[vtc].x, ep_VT[vtc].y), Point(-1, -1)])
+        component_endpoints.append(Point(vb.x, vb.y))
+        component_endpoints.append(Point(vb.x, ep_VT[vtc].y))
+
         ep_VT[compCount], ep_VT[vtc] = ep_VT[vtc], ep_VT[compCount]
         compCount += 1
     else:
@@ -386,7 +454,10 @@ for i in range(compCount, len(ep_VT)):
     solo_ep_VT.append(ep_VT[i])
 
 
-
+checkedLines = []
+outputLines = []
+componentId = 0
+fileCount = 21
 # find third/forth connection on components if exists (transistor)
 for c in components:
     compMiddleX = round(c[0].x + ((c[1].x - c[0].x) / 2))
@@ -405,6 +476,8 @@ for c in components:
     
         if vbc < len(solo_ep_VB):
             c[0] = Point(c[0].x, solo_ep_VB[vbc].y - COMPONENT_BOX_SIZE_OFFSET*2)
+            c[5] = Point(solo_ep_VB[vbc].x, solo_ep_VB[vbc].y)
+            component_endpoints.append(c[5])
         
         # bot side
         vtc = 0
@@ -419,6 +492,8 @@ for c in components:
     
         if vtc < len(solo_ep_VT):
             c[1] = Point(c[1].x, solo_ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET*2)
+            c[5] = Point(solo_ep_VT[vtc].x, solo_ep_VT[vtc].y)
+            component_endpoints.append(c[5])
     else:
         # right side
         hlc = 0
@@ -433,6 +508,8 @@ for c in components:
     
         if hlc < len(solo_ep_HL):
             c[1] = Point(solo_ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET*2, c[1].y)
+            c[5] = Point(solo_ep_HL[hlc].x, solo_ep_HL[hlc].y)
+            component_endpoints.append(c[5])
         
         # left side
         hrc = 0
@@ -447,6 +524,8 @@ for c in components:
         
         if hrc < len(solo_ep_HR):
             c[0] = Point(solo_ep_HR[hrc].x - COMPONENT_BOX_SIZE_OFFSET*2, c[0].y)
+            c[5] = Point(solo_ep_HR[hrc].x, solo_ep_HR[hrc].y)
+            component_endpoints.append(c[5])
     
     
     # cv2.rectangle(img, (c[0][0], c[0][1]), (c[1][0], c[1][1]), (0,0,255), 5)

@@ -7,7 +7,7 @@ from tensorflow.python.keras.layers.preprocessing.image_preprocessing import Ran
 
 img_height = 150
 img_width = 150
-comp_count = 11
+comp_count = 8
 batch_size = comp_count
 
 images_path = 'circuits/cnn/train'
@@ -20,7 +20,7 @@ ds_train = tf.keras.preprocessing.image_dataset_from_directory(
     batch_size=batch_size,
     image_size=(img_height,img_width),
     shuffle=True,
-    seed=135,
+    seed=123,
     validation_split=0.2,
     subset="training",
 )
@@ -33,7 +33,7 @@ ds_valid = tf.keras.preprocessing.image_dataset_from_directory(
     batch_size=batch_size,
     image_size=(img_height,img_width),
     shuffle=True,
-    seed=135,
+    seed=123,
     validation_split=0.2,
     subset="validation",
 )
@@ -52,12 +52,13 @@ data_augmentation = keras.Sequential([
 model = keras.Sequential([
     data_augmentation,
     layers.Input((img_height,img_width, 1)),
-    layers.Conv2D(16, 3, activation='relu'),
-    layers.MaxPool2D(),
     layers.Conv2D(32, 3, activation='relu'),
-    layers.MaxPool2D(),
+    layers.MaxPooling2D(),
+    layers.Conv2D(64, 3, activation='relu'),
+    layers.MaxPooling2D(),
     layers.Flatten(),
     layers.Dense(128, activation='relu'),
+    layers.Dense(64, activation='relu'),
     layers.Dense(comp_count),
 ])
 

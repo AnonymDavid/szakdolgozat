@@ -9,20 +9,15 @@
 			<add id="0" item="lamp" p4:guid="c0da4646-ffaf-48f0-8a56-2e8e07148ecf" p4:version="3.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
 			<add id="1" item="acsource" p4:guid="8979c617-b041-4069-8769-0b76dc0e6c52" p4:version="1.2.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
 			<add id="2" item="cell" p4:guid="8979c617-b041-4069-8769-0b76dc0e6c52" p4:version="1.2.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
-			<add id="3" item="transnpn" p4:guid="247a790e-c7aa-43ca-9e0c-c524257c0cd5" p4:version="1.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
-			<add id="4" item="transpnp" p4:guid="247a790e-c7aa-43ca-9e0c-c524257c0cd5" p4:version="1.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
-			<add id="5" item="inductor" p4:guid="e6ebc838-fb6a-4078-8d03-7fed04cc6938" p4:version="2.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
-			<add id="6" item="battery" p4:guid="8979c617-b041-4069-8769-0b76dc0e6c52" p4:version="1.2.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
-			<add id="7" item="toggleswitch" p4:guid="421694bf-755a-4d50-b2ca-7273216ca17d" p4:version="1.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
-			<add id="8" item="capacitor" p4:guid="154b7831-58e6-4126-b582-8c1cc2bdeb13" p4:version="4.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
-			<add id="9" item="resistor" p4:guid="dab6d52b-51a0-49b0-bc40-3cda966148aa" p4:version="4.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
-		</src>
-		<src>
-			<add id="10" item="Standard Diode" p4:guid="099c5645-f7c6-4933-bed9-b0f4aa3f4a2a" p4:version="1.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="3" item="inductor" p4:guid="e6ebc838-fb6a-4078-8d03-7fed04cc6938" p4:version="2.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="4" item="battery" p4:guid="8979c617-b041-4069-8769-0b76dc0e6c52" p4:version="1.2.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="5" item="toggleswitch" p4:guid="421694bf-755a-4d50-b2ca-7273216ca17d" p4:version="1.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="6" item="capacitor" p4:guid="154b7831-58e6-4126-b582-8c1cc2bdeb13" p4:version="4.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
+			<add id="7" item="resistor" p4:guid="dab6d52b-51a0-49b0-bc40-3cda966148aa" p4:version="4.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />
 		</src>
 	</definitions>
 	<elements>
-		<c id="0" tp="{9}" x="970" y="480" o="h" sz="60" flp="false">
+		<c id="0" tp="{7}" x="970" y="480" o="h" sz="60" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -32,7 +27,7 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="1" tp="{8}" x="170" y="620" o="v" sz="10" flp="false">
+		<c id="1" tp="{6}" x="170" y="620" o="v" sz="10" flp="true">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -42,7 +37,7 @@
 			</prs>
 		<cns />
 		</c>
-		<c id="2" tp="{6}" x="40" y="610" o="v" sz="30" flp="false">
+		<c id="2" tp="{4}" x="40" y="610" o="v" sz="30" flp="true">
 			<prs>
 				<p k="voltage" v="5" />
 				<p k="frequency" v="50" />
@@ -51,7 +46,7 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="3" tp="{8}" x="1090" y="560" o="v" sz="10" flp="false">
+		<c id="3" tp="{6}" x="1090" y="560" o="v" sz="10" flp="true">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -61,7 +56,7 @@
 			</prs>
 		<cns />
 		</c>
-		<c id="4" tp="{9}" x="1090" y="670" o="v" sz="60" flp="false">
+		<c id="4" tp="{7}" x="1090" y="670" o="v" sz="60" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -71,7 +66,7 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="5" tp="{8}" x="1310" y="540" o="v" sz="10" flp="false">
+		<c id="5" tp="{6}" x="1310" y="540" o="v" sz="10" flp="true">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -81,7 +76,7 @@
 			</prs>
 		<cns />
 		</c>
-		<c id="6" tp="{9}" x="910" y="550" o="v" sz="60" flp="false">
+		<c id="6" tp="{7}" x="910" y="550" o="v" sz="60" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -91,29 +86,14 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="7" tp="{4}" x="900" y="380" o="v" sz="30" flp="false">
+		<c id="7" tp="{0}" x="900" y="380" o="v" sz="30" flp="true">
 			<prs>
-				<p k="t" v="PNP" />
+				<p k="t" v="Generic" />
+				<p k="islit" v="False" />
 			</prs>
 			<cns />
 		</c>
-		<c id="8" tp="{9}" x="750" y="770" o="v" sz="60" flp="false">
-			<prs>
-				<p k="style" v="IEC" />
-				<p k="text" v="" />
-				<p k="resistance" v="1" />
-				<p k="showResistance" v="False" />
-				<p k="t" v="Standard" />
-			</prs>
-			<cns />
-		</c>
-		<c id="9" tp="{4}" x="500" y="510" o="v" sz="30" flp="false">
-			<prs>
-				<p k="t" v="PNP" />
-			</prs>
-			<cns />
-		</c>
-		<c id="10" tp="{9}" x="500" y="330" o="v" sz="60" flp="false">
+		<c id="8" tp="{7}" x="750" y="770" o="v" sz="60" flp="true">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -123,7 +103,24 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="11" tp="{8}" x="910" y="830" o="v" sz="10" flp="false">
+		<c id="9" tp="{0}" x="500" y="510" o="v" sz="30" flp="true">
+			<prs>
+				<p k="t" v="Generic" />
+				<p k="islit" v="False" />
+			</prs>
+			<cns />
+		</c>
+		<c id="10" tp="{7}" x="500" y="330" o="v" sz="60" flp="false">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="1" />
+				<p k="showResistance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns />
+		</c>
+		<c id="11" tp="{6}" x="910" y="830" o="v" sz="10" flp="true">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -133,7 +130,7 @@
 			</prs>
 		<cns />
 		</c>
-		<c id="12" tp="{5}" x="380" y="730" o="v" sz="80" flp="false">
+		<c id="12" tp="{3}" x="380" y="730" o="v" sz="80" flp="true">
 			<prs>
 				<p k="text" v="" />
 				<p k="inductance" v="0.1" />
@@ -141,7 +138,7 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="13" tp="{8}" x="380" y="580" o="v" sz="10" flp="false">
+		<c id="13" tp="{6}" x="380" y="580" o="v" sz="10" flp="true">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -151,7 +148,7 @@
 			</prs>
 		<cns />
 		</c>
-		<c id="14" tp="{8}" x="550" y="760" o="v" sz="10" flp="false">
+		<c id="14" tp="{6}" x="550" y="760" o="v" sz="10" flp="true">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -161,7 +158,7 @@
 			</prs>
 		<cns />
 		</c>
-		<c id="15" tp="{9}" x="1080" y="260" o="v" sz="60" flp="false">
+		<c id="15" tp="{7}" x="1080" y="260" o="v" sz="60" flp="false">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />
@@ -180,19 +177,19 @@
 <w x="40" y="640" o="v" sz="290" flp="false" />
 <w x="40" y="220" o="v" sz="390" flp="false" />
 <w x="40" y="220" o="h" sz="1260" flp="false" />
-<w x="1300" y="220" o="v" sz="320" flp="false" />
+<w x="1310" y="220" o="v" sz="320" flp="false" />
 <w x="1310" y="550" o="v" sz="360" flp="false" />
 <w x="1140" y="910" o="h" sz="170" flp="false" />
 <w x="1310" y="480" o="v" sz="60" flp="false" />
-<w x="1080" y="320" o="v" sz="240" flp="false" />
+<w x="1090" y="320" o="v" sz="240" flp="false" />
 <w x="1090" y="570" o="v" sz="100" flp="false" />
 <w x="1090" y="730" o="v" sz="190" flp="false" />
-<w x="900" y="410" o="v" sz="140" flp="false" />
+<w x="910" y="410" o="v" sz="140" flp="false" />
 <w x="910" y="620" o="v" sz="210" flp="false" />
 <w x="910" y="840" o="v" sz="80" flp="false" />
-<w x="930" y="400" o="h" sz="150" flp="false" />
+<w x="930" y="390" o="h" sz="150" flp="false" />
 <w x="900" y="220" o="v" sz="160" flp="false" />
-<w x="740" y="530" o="v" sz="240" flp="false" />
+<w x="750" y="530" o="v" sz="240" flp="false" />
 <w x="520" y="530" o="h" sz="220" flp="false" />
 <w x="750" y="830" o="v" sz="90" flp="false" />
 <w x="500" y="550" o="v" sz="130" flp="false" />
