@@ -79,7 +79,7 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="7" tp="{6}" x="890" y="400" o="v" sz="10" flp="false">
+		<c id="7" tp="{6}" x="890" y="400" o="v" sz="10" flp="true">
 			<prs>
 				<p k="style" v="IEC" />
 				<p k="text" v="" />

@@ -262,9 +262,18 @@ thresh = cv2.threshold(gray, 110, 255, cv2.THRESH_BINARY)[1]
 
 thresh = 255 - thresh
 
-# thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)), iterations=3)
-# thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (5,5)), iterations=3)
+biggerSide = img.shape[0] if img.shape[0] > img.shape[1] else img.shape[1]
 
+POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.00375)
+LINE_MIN_LENGTH = round(biggerSide*0.0275)
+LINE_CHECK_SIMILARITY_THRESHOLD = round(biggerSide*0.00375)
+LINE_AGGREGATION_SIMILARITY_THRESHOLD = round(biggerSide*0.00625)
+COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = round(biggerSide*0.0125)
+COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = round(biggerSide*0.105)
+COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = round(biggerSide*0.004)
+COMPONENT_MIN_BOX_SIZE = round(biggerSide*0.05)
+COMPONENT_BOX_SIZE_OFFSET = round(biggerSide*0.015)
+OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.0075)
 
 # ROTATE VIA LONGEST LINES AVG ANGLE
 linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, LINE_MIN_LENGTH, 0))
@@ -667,7 +676,6 @@ for lineC in range(len(outputLines)):
     while lineCheckSide <= 1:
         if abs(outputLines[lineC].p2.x-outputLines[lineC].p1.x) > abs(outputLines[lineC].p2.y-outputLines[lineC].p1.y):
             # horizontal
-            print("ASDFASDFASDFASDF")
             closestInterestDiff = 1000
             for olineC in range(len(outputLines)):
                 if abs(outputLines[olineC].p2.x-outputLines[olineC].p1.x) < abs(outputLines[olineC].p2.y-outputLines[olineC].p1.y):
