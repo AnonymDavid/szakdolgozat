@@ -14,7 +14,7 @@ from tensorflow import keras
 
 import time
 
-# ----- CONSTANTS ----- #TODO: all should be percent?
+# ----- CONSTANTS -----
 CNT_DELETE_PERCENT = 15
 POINT_SIMILARITY_COMPARE_AREA_RADIUS = 15
 LINE_MIN_LENGTH = 110
@@ -31,7 +31,7 @@ OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = 30
 OUTPUT_SCALE = 3
 
 # temp:
-PICTURE_SCALE = 25
+PICTURE_SCALE = 20
 
 
 
@@ -424,7 +424,7 @@ for hr in ep_HR:
         components.append([Point(hr.x - COMPONENT_BOX_SIZE_OFFSET, hr.y - round(compSize/2)), Point(ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET, ep_HL[hlc].y + round(compSize / 2)), Orientation.HORIZONTAL, Point(hr.x, hr.y), Point(ep_HL[hlc].x, ep_HL[hlc].y), Point(-1, -1)])
         component_endpoints.append(Point(hr.x, hr.y))
         component_endpoints.append(Point(hr.x, ep_HL[hlc].y))
-
+        
         ep_HL[compCount], ep_HL[hlc] = ep_HL[hlc], ep_HL[compCount]
         compCount += 1
     else:
@@ -457,7 +457,7 @@ for vb in ep_VB:
         components.append([Point(vb.x - round(compSize/2), vb.y - COMPONENT_BOX_SIZE_OFFSET), Point(ep_VT[vtc].x + round(compSize / 2), ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET), Orientation.VERTICAL, Point(vb.x, vb.y), Point(ep_VT[vtc].x, ep_VT[vtc].y), Point(-1, -1)])
         component_endpoints.append(Point(vb.x, vb.y))
         component_endpoints.append(Point(vb.x, ep_VT[vtc].y))
-
+        
         ep_VT[compCount], ep_VT[vtc] = ep_VT[vtc], ep_VT[compCount]
         compCount += 1
     else:
@@ -495,79 +495,9 @@ file.write(
 	'\t<elements>\n'
 )
 
-checkedLines = []
-outputLines = []
+# predict component with CNN
 componentId = 0
-# find third/forth connection on components if exists (transistor)
 for c in components:
-    compMiddleX = round(c[0].x + ((c[1].x - c[0].x) / 2))
-    compMiddleY = round(c[0].y + ((c[1].y - c[0].y) / 2))
-    if c[2] == Orientation.HORIZONTAL:
-        # top side
-        vbc = 0
-        while (vbc < len(solo_ep_VB) and
-        (
-            solo_ep_VB[vbc].x > compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_VB[vbc].x < compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_VB[vbc].y < compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
-            solo_ep_VB[vbc].y > compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
-        )):
-            vbc += 1
-    
-        if vbc < len(solo_ep_VB):
-            c[0] = Point(c[0].x, solo_ep_VB[vbc].y - COMPONENT_BOX_SIZE_OFFSET*2)
-            c[5] = Point(solo_ep_VB[vbc].x, solo_ep_VB[vbc].y)
-            component_endpoints.append(c[5])
-        
-        # bot side
-        vtc = 0
-        while (vtc < len(solo_ep_VT) and
-        (
-            solo_ep_VT[vtc].x > compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_VT[vtc].x < compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_VT[vtc].y > compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
-            solo_ep_VT[vtc].y < compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
-        )):
-            vtc += 1
-    
-        if vtc < len(solo_ep_VT):
-            c[1] = Point(c[1].x, solo_ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET*2)
-            c[5] = Point(solo_ep_VT[vtc].x, solo_ep_VT[vtc].y)
-            component_endpoints.append(c[5])
-    else:
-        # right side
-        hlc = 0
-        while (hlc < len(solo_ep_HL) and
-        (
-            solo_ep_HL[hlc].y > compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_HL[hlc].y < compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_HL[hlc].x > compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
-            solo_ep_HL[hlc].x < compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
-        )):
-            hlc += 1
-    
-        if hlc < len(solo_ep_HL):
-            c[1] = Point(solo_ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET*2, c[1].y)
-            c[5] = Point(solo_ep_HL[hlc].x, solo_ep_HL[hlc].y)
-            component_endpoints.append(c[5])
-        
-        # left side
-        hrc = 0
-        while (hrc < len(solo_ep_HR) and
-        (
-            solo_ep_HR[hrc].y > compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_HR[hrc].y < compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_HR[hrc].x < compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
-            solo_ep_HR[hrc].x > compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
-        )):
-            hrc += 1
-        
-        if hrc < len(solo_ep_HR):
-            c[0] = Point(solo_ep_HR[hrc].x - COMPONENT_BOX_SIZE_OFFSET*2, c[0].y)
-            c[5] = Point(solo_ep_HR[hrc].x, solo_ep_HR[hrc].y)
-            component_endpoints.append(c[5])
-    
-    
     cv2.rectangle(img, (c[0][0], c[0][1]), (c[1][0], c[1][1]), (0,0,255), 5)
 
     componentImg = thresh[c[0][1]:c[1][1], c[0][0]:c[1][0]]
@@ -578,7 +508,6 @@ for c in components:
     componentImg = cv2.resize(componentImg, dsize=(150,150), interpolation=cv2.INTER_CUBIC)
     componentImg = componentImg.reshape(-1, 150, 150, 1)
     
-    # predict component with CNN
     prediction = model.predict(componentImg)
     bestPrediction = np.argmax(prediction[0])
     bestPredictionValue = prediction[0][bestPrediction]
@@ -699,10 +628,10 @@ for c in components:
 
     componentId += 1
 
-    # cv2.imshow("component", cv2.resize(componentImg, (150,150)))
-    # cv2.waitKey(0)
 
-
+# Find lines for output (starting from component endpoints)
+checkedLines = []
+outputLines = []
 for c in components:
     for i in range(len(lines)):
         line = lines[i]
@@ -721,6 +650,7 @@ for c in components:
     
     cv2.rectangle(img, (c[0][0], c[0][1]), (c[1][0], c[1][1]), (255,0,255), 5)
 
+# Search for remaining lines (endpoints not connected to other line endpoints)
 for i in range(len(lines)):
     if not i in checkedLines:
         cc = 0
@@ -729,27 +659,50 @@ for i in range(len(lines)):
         if cc >= len(components):
             followLine(lines, i, 0, component_endpoints, checkedLines, outputLines, len(horizontal))
 
+# Final adjustments on output lines
+for lineC in range(len(outputLines)):
+    lineTemp = [[outputLines[lineC].p1.x, outputLines[lineC].p1.y], [outputLines[lineC].p2.x, outputLines[lineC].p2.y]]
+    
+    lineCheckSide = 0
+    while lineCheckSide <= 1:
+        if abs(outputLines[lineC].p2.x-outputLines[lineC].p1.x) > abs(outputLines[lineC].p2.y-outputLines[lineC].p1.y):
+            # horizontal
+            print("ASDFASDFASDFASDF")
+            closestInterestDiff = 1000
+            for olineC in range(len(outputLines)):
+                if abs(outputLines[olineC].p2.x-outputLines[olineC].p1.x) < abs(outputLines[olineC].p2.y-outputLines[olineC].p1.y):
+                    interestDiff = abs(outputLines[olineC].p1.x - lineTemp[lineCheckSide][0])
+                    if interestDiff < closestInterestDiff:
+                        closestInterestDiff = interestDiff
+                        closestInterest = outputLines[olineC].p1.x
+            
+            if closestInterestDiff <= 12:
+                lineTemp[lineCheckSide][0] = closestInterest
+        else:
+            # vertical
+            closestInterestDiff = 1000
+            for olineC in range(len(outputLines)):
+                if abs(outputLines[olineC].p2.x-outputLines[olineC].p1.x) > abs(outputLines[olineC].p2.y-outputLines[olineC].p1.y):
+                    interestDiff = abs(outputLines[olineC].p1.y - lineTemp[lineCheckSide][1])
+                    if interestDiff < closestInterestDiff:
+                        closestInterestDiff = interestDiff
+                        closestInterest = outputLines[olineC].p1.y
+            
+            if closestInterestDiff <= 12:
+                lineTemp[lineCheckSide][1] = closestInterest
+        
+        lineCheckSide += 1
+    
+    outputLines[lineC] = Line(Point(round(lineTemp[0][0]), round(lineTemp[0][1])), Point(round(lineTemp[1][0]), round(lineTemp[1][1])))
+
+# Draw lines to output
 for l in outputLines:
-    cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 10)
+    # cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 10)
 
     file.write('<w x="'+str(l.p1.x)+'" y="'+str(l.p1.y)+'" o="'+str("h" if abs(l.p2.x - l.p1.x) - abs(l.p2.y - l.p1.y) > 0 else "v")+'" sz="'+str(abs(l.p2.x - l.p1.x) if abs(l.p2.x - l.p1.x) - abs(l.p2.y - l.p1.y) > 0 else abs(l.p2.y - l.p1.y))+'" flp="false" />\n')
 
 for l in lines:
     cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 4)
-
-# for ep in ep_HL:
-#     cv2.circle(img, (ep.x, ep.y), 12, (255,0,255), -1)
-# for ep in ep_HR:
-#     cv2.circle(img, (ep.x, ep.y), 12, (255,0,255), -1)
-# for ep in ep_VT:
-#     cv2.circle(img, (ep.x, ep.y), 12, (255,0,255), -1)
-# for ep in ep_VB:
-#     cv2.circle(img, (ep.x, ep.y), 12, (255,0,255), -1)
-
-# for ep in component_endpoints:
-#     cv2.circle(img, (ep.x, ep.y), 15, (255,0,255), -1)
-
-
 
 # finish output file
 file.write(
@@ -759,7 +712,7 @@ file.write(
 
 file.close()
 
-# rest of the files
+# Rest of the files
 
 file = open("output/_rels/.rels", "w", newline='')
 file.write('<?xml version="1.0" encoding="utf-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Type="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/relationships/circuitDiagramDocument" Target="/circuitdiagram/Document.xml" Id="Rd91fbf4e19c745a9" /><Relationship Type="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/relationships/metadata/core-properties" Target="/docProps/core.xml" Id="Rd87aec61287b48ef" /></Relationships>')
@@ -778,7 +731,7 @@ file = open("output/[Content_Types].xml", "w", newline='')
 file.write('<?xml version="1.0" encoding="utf-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/vnd.circuitdiagram.document.main+xml" /><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml" /><Override PartName="/docProps/core.xml" ContentType="application/vnd.circuitdiagram.document.core-properties+xml" /></Types>')
 file.close()
 
-
+# Compressing files to final output
 with ZipFile('output.cddx', mode='w') as zf:
     zf.write("output/_rels/.rels", "_rels/.rels")
     zf.write("output/circuitdiagram/Document.xml", "circuitdiagram/Document.xml")
@@ -786,14 +739,11 @@ with ZipFile('output.cddx', mode='w') as zf:
     zf.write("output/[Content_Types].xml", "[Content_Types].xml")
 
 
-
-
-
 cv2.imshow("img", resizeImage(img, PICTURE_SCALE))
 # cv2.imshow("thresh", resizeImage(thresh, PICTURE_SCALE))
 
 t2 = time.perf_counter()
 
-print(f"\nTime: {t2 - t1:0.4f} seconds")
+print(f"\nProcessing time: {t2 - t1:0.4f} seconds")
 
 cv2.waitKey(0)
