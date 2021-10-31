@@ -70,6 +70,7 @@ def getLineLength(l: Line) -> float:
     """Get the length of a line."""
     return math.sqrt( ((l.p2.x-l.p1.x)**2 + (l.p2.y-l.p1.y)**2) )
 
+
 def getLineAngle(l: Line) -> float:
     """Get the angle of line with the horizontal axis."""
     dx = l.p2.x - l.p1.x
@@ -89,6 +90,7 @@ def getLineAngle(l: Line) -> float:
 # 
 #                      270
 
+
 def convertHoughToLineList(hl) -> List[Line]:
     """Converts the output of HoughLineP to Line array."""
     lines = []
@@ -97,9 +99,11 @@ def convertHoughToLineList(hl) -> List[Line]:
     
     return lines
 
+
 def convertHoughToLine(hl) -> Line:
     """Converts a HoughLinesP format line to Line."""
     return Line(Point(hl[0][0], hl[0][1]), Point(hl[0][2], hl[0][3]))
+
 
 def isSameLine(l1: Line, l2: Line) -> bool:
     """Check if the given lines are the same based on threir endpoint position and a position threshold constant."""
@@ -113,11 +117,13 @@ def isSameLine(l1: Line, l2: Line) -> bool:
         return True
     return False
 
+
 def isSamePoint(p1: Point, p2: Point, threshold: int) -> bool:
     """Check if the given points are the same based on an area threshold constant."""
     if abs(p1.x - p2.x) < threshold and abs(p1.y - p2.y) < threshold:
         return True
     return False
+
 
 def pointsCloseArray(p1: Point, points: List[Point]) -> int:
     """Check if the given point is close to another in the array."""
@@ -125,6 +131,7 @@ def pointsCloseArray(p1: Point, points: List[Point]) -> int:
         if isSamePoint(p1, points[i], POINT_SIMILARITY_COMPARE_AREA_RADIUS):
             return i
     return -1
+
 
 def rotateImage(image, angle: int):
     """Rotates a given image by the given angle counterclockwise."""
@@ -146,8 +153,31 @@ def rotateImage(image, angle: int):
 
     return rotated_image
 
+
 def resizeImage(src, percent: int):
     return cv2.resize(src, (int(src.shape[1]*percent/100), int(src.shape[0]*percent/100)))
+
+
+def putOnCanvas(image, imgPercent):
+    if len(image.shape) == 3:
+        canvas = np.zeros((image.shape[0], image.shape[1], image.shape[2]), dtype='uint8')
+    else:
+        canvas = np.zeros((image.shape[0], image.shape[1]), dtype='uint8')
+
+    image = resizeImage(image, imgPercent)
+
+    offsetX = round((canvas.shape[1] - image.shape[1]) / 2)
+    offsetY = round((canvas.shape[0] - image.shape[0]) / 2)
+
+    x1 = offsetX
+    x2 = offsetX + image.shape[1]
+    y1 = offsetY
+    y2 = offsetY + image.shape[0]
+
+    canvas[y1:y2, x1:x2] = image
+
+    return canvas
+
 
 def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, outputLines, horizontalCount):
     if lineIdx in checkedLines:
@@ -227,6 +257,7 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
         if samePoint != -1:
             followLine(lines, lineC, 1-samePoint, component_endpoints, checkedLines, outputLines, horizontalCount)
 
+
 def createDirectoryTree():
     filenames = ["output/_rels/", "output/circuitdiagram/", "output/docProps/"]
     for filename in filenames:
@@ -247,8 +278,8 @@ model = keras.models.load_model("symbolsModel.h5")
 
 t1 = time.perf_counter()
 
-if not len(sys.argv) == 2:
-    exit("No parameter given!")
+if len(sys.argv) < 2:
+    exit("Not enough parameter given!")
 
 if not os.path.isfile(str(sys.argv[1])):
     exit("The file does not exist!")
@@ -262,15 +293,17 @@ thresh = cv2.threshold(gray, 110, 255, cv2.THRESH_BINARY)[1]
 
 thresh = 255 - thresh
 
+if len(sys.argv) > 2:
+    img = putOnCanvas(img, 100 - int(sys.argv[2]) * 10)
+    thresh = putOnCanvas(thresh, 100 - int(sys.argv[2]) * 10)
+
 biggerSide = img.shape[0] if img.shape[0] > img.shape[1] else img.shape[1]
 
 POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.00375)
 LINE_MIN_LENGTH = round(biggerSide*0.0275)
 LINE_CHECK_SIMILARITY_THRESHOLD = round(biggerSide*0.00375)
-LINE_AGGREGATION_SIMILARITY_THRESHOLD = round(biggerSide*0.00625)
 COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = round(biggerSide*0.0125)
 COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = round(biggerSide*0.105)
-COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = round(biggerSide*0.004)
 COMPONENT_MIN_BOX_SIZE = round(biggerSide*0.05)
 COMPONENT_BOX_SIZE_OFFSET = round(biggerSide*0.015)
 OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.0075)
@@ -663,7 +696,7 @@ for c in components:
 for i in range(len(lines)):
     if not i in checkedLines:
         cc = 0
-        while cc < len(components) and (lines[i].p1.x <= components[cc][0].x or lines[i].p1.x >= components[cc][1].x or lines[i].p1.y <= components[cc][0].y or lines[i].p1.y >= components[cc][1].y):
+        while cc < len(components) and (lines[i].p1.x <= components[cc][0].x or lines[i].p1.x >= components[cc][1].x or lines[i].p1.y <= components[cc][0].y or lines[i].p1.y >= components[cc][1].y) and (lines[i].p2.x <= components[cc][0].x or lines[i].p2.x >= components[cc][1].x or lines[i].p2.y <= components[cc][0].y or lines[i].p2.y >= components[cc][1].y):
             cc += 1
         if cc >= len(components):
             followLine(lines, i, 0, component_endpoints, checkedLines, outputLines, len(horizontal))
@@ -748,7 +781,7 @@ with ZipFile('output.cddx', mode='w') as zf:
 
 
 cv2.imshow("img", resizeImage(img, PICTURE_SCALE))
-# cv2.imshow("thresh", resizeImage(thresh, PICTURE_SCALE))
+cv2.imshow("thresh", resizeImage(thresh, PICTURE_SCALE))
 
 t2 = time.perf_counter()
 
