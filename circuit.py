@@ -199,7 +199,7 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
             compEpCount += 1
     
     if compEpCount < len(component_endpoints):
-        lineTemp[lineCompSide] = [round(round(component_endpoints[compEpCount].x/OUTPUT_SCALE, -1)), round(round(component_endpoints[compEpCount].y/OUTPUT_SCALE, -1))]
+        lineTemp[lineCompSide] = [int(round(component_endpoints[compEpCount].x/OUTPUT_SCALE, -1)), int(round(component_endpoints[compEpCount].y/OUTPUT_SCALE, -1))]
     
     if lineIdx < horizontalCount:
         closestInterestDiff = 1000
@@ -287,6 +287,7 @@ if not os.path.isfile(str(sys.argv[1])):
 img = cv2.imread(sys.argv[1])
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+gray = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)))
 gray = cv2.medianBlur(gray, 7)
 
 thresh = cv2.threshold(gray, 110, 255, cv2.THRESH_BINARY)[1]
@@ -322,7 +323,6 @@ linesP = convertHoughToLineList(linesP)
 rotatelines = []
 checkedLineCount = 0
 differentLineCount = 0
-# rotatelines.append(linesP[0])
 
 while checkedLineCount < len(linesP) and differentLineCount < LINE_COUNT_CHECK_FOR_ROTATION:
     line = linesP[checkedLineCount]
@@ -352,6 +352,24 @@ avgAngleDiff /= differentLineCount
 thresh = rotateImage(thresh, avgAngleDiff)
 gray = rotateImage(gray, avgAngleDiff)
 img = rotateImage(img, avgAngleDiff)
+
+
+# get offset for output
+contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+bestContourSize = [0,0,0,0]
+for cnt in contours:
+    # figuring out shapes
+    peri = cv2.arcLength(cnt, True)
+    approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
+
+    x, y, w, h = cv2.boundingRect(approx)
+
+    if w*h > bestContourSize[2]*bestContourSize[3] and w < img.shape[1]-100 and h < img.shape[0]-100:
+        bestContourSize = [x,y,w,h]
+        cont = cnt
+
+outputOffset = [int(round((x-50)/OUTPUT_SCALE, -1)), int(round((y-50)/OUTPUT_SCALE, -1))]
 
 
 # finding connection lines
@@ -448,7 +466,6 @@ compCount = 0
 
 # horizontal components
 for hr in ep_HR:
-    # cv2.rectangle(img, (hr.x + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH, hr.y - round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2)), (hr.x + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH, hr.y + round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2)), (0,0,255), 5)
     hlc = compCount
     while (hlc < len(ep_HL) and
         (
@@ -479,7 +496,6 @@ for i in range(compCount, len(ep_HL)):
 # vertical components
 compCount = 0
 for vb in ep_VB:
-    # cv2.rectangle(img, (vb.x - round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2), vb.y + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH), (vb.x + round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2), vb.y + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH), (255,0,0), 8)
     vtc = compCount
     
     while (vtc < len(ep_VT) and
@@ -563,8 +579,8 @@ for c in components:
         bestPrediction = np.argmax(prediction[0])
         flipped = True
         
-    compOutputPos = Point(round(round(c[3][0]/OUTPUT_SCALE, -1)), round(round(c[3][1]/OUTPUT_SCALE, -1)))
-    compOutputSize = round(round((abs(c[4][0]-c[3][0]) if c[2] == Orientation.HORIZONTAL else abs(c[4][1]-c[3][1]))/OUTPUT_SCALE, -1))
+    compOutputPos = Point(int(round(c[3][0]/OUTPUT_SCALE - outputOffset[0], -1)), int(round(c[3][1]/OUTPUT_SCALE - outputOffset[1], -1)))
+    compOutputSize = int(round((abs(c[4][0]-c[3][0]) if c[2] == Orientation.HORIZONTAL else abs(c[4][1]-c[3][1]))/OUTPUT_SCALE, -1))
 
     if bestPrediction == 0:
         cv2.putText(img, "battery", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
@@ -687,7 +703,7 @@ for c in components:
         
         if not foundLine == 0:
             oLine = Line(Point(line.p1.x, line.p1.y), Point(line.p2.x, line.p2.y))
-            # cv2.line(img, (oLine.p1.x, oLine.p1.y), (oLine.p2.x, oLine.p2.y), (0,255,0), 10)
+            
             followLine(lines, i, (1 if oLine.p1.x == c[foundLine].x and oLine.p1.y == c[foundLine].y else 0), component_endpoints, checkedLines, outputLines, len(horizontal))
     
     cv2.rectangle(img, (c[0][0], c[0][1]), (c[1][0], c[1][1]), (255,0,255), 5)
@@ -738,9 +754,7 @@ for lineC in range(len(outputLines)):
 
 # Draw lines to output
 for l in outputLines:
-    # cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 10)
-
-    file.write('<w x="'+str(l.p1.x)+'" y="'+str(l.p1.y)+'" o="'+str("h" if abs(l.p2.x - l.p1.x) - abs(l.p2.y - l.p1.y) > 0 else "v")+'" sz="'+str(abs(l.p2.x - l.p1.x) if abs(l.p2.x - l.p1.x) - abs(l.p2.y - l.p1.y) > 0 else abs(l.p2.y - l.p1.y))+'" flp="false" />\n')
+    file.write('<w x="'+str(l.p1.x - outputOffset[0])+'" y="'+str(l.p1.y - outputOffset[1])+'" o="'+str("h" if abs(l.p2.x - l.p1.x) - abs(l.p2.y - l.p1.y) > 0 else "v")+'" sz="'+str(abs(l.p2.x - l.p1.x) if abs(l.p2.x - l.p1.x) - abs(l.p2.y - l.p1.y) > 0 else abs(l.p2.y - l.p1.y))+'" flp="false" />\n')
 
 for l in lines:
     cv2.line(img, (l.p1.x, l.p1.y), (l.p2.x, l.p2.y), (0,255,0), 4)

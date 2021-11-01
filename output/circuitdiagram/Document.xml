@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <circuit version="1.4" xmlns="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document">
 	<properties>
-		<width>4158</width>
-		<height>4158</height>
+		<width>4162</width>
+		<height>4162</height>
 	</properties>
 	<definitions>
 		<src col="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/components/common">
@@ -17,14 +17,7 @@
 		</src>
 	</definitions>
 	<elements>
-		<c id="0" tp="{0}" x="720" y="640" o="v" sz="50" flp="true">
-			<prs>
-				<p k="t" v="Generic" />
-				<p k="islit" v="False" />
-			</prs>
-			<cns />
-		</c>
-		<c id="1" tp="{4}" x="1000" y="650" o="v" sz="40" flp="false">
+		<c id="0" tp="{4}" x="450" y="170" o="v" sz="40" flp="false">
 			<prs>
 				<p k="voltage" v="5" />
 				<p k="frequency" v="50" />
@@ -33,29 +26,37 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="2" tp="{0}" x="860" y="640" o="v" sz="50" flp="true">
+		<c id="1" tp="{0}" x="20" y="160" o="v" sz="50" flp="false">
 			<prs>
 				<p k="t" v="Generic" />
 				<p k="islit" v="False" />
 			</prs>
 			<cns />
 		</c>
-		<c id="3" tp="{0}" x="570" y="640" o="v" sz="50" flp="false">
+		<c id="2" tp="{0}" x="160" y="160" o="v" sz="50" flp="true">
 			<prs>
 				<p k="t" v="Generic" />
 				<p k="islit" v="False" />
 			</prs>
 			<cns />
 		</c>
-<w x="720" y="690" o="v" sz="140" flp="false" />
-<w x="720" y="500" o="v" sz="140" flp="false" />
-<w x="1000" y="690" o="v" sz="140" flp="false" />
-<w x="570" y="830" o="h" sz="430" flp="false" />
-<w x="570" y="690" o="v" sz="140" flp="false" />
-<w x="1000" y="500" o="v" sz="150" flp="false" />
-<w x="570" y="500" o="h" sz="430" flp="false" />
-<w x="570" y="500" o="v" sz="140" flp="false" />
-<w x="860" y="690" o="v" sz="140" flp="false" />
-<w x="860" y="500" o="v" sz="140" flp="false" />
+		<c id="3" tp="{0}" x="310" y="160" o="v" sz="50" flp="true">
+			<prs>
+				<p k="t" v="Generic" />
+				<p k="islit" v="False" />
+			</prs>
+			<cns />
+		</c>
+<w x="450" y="20" o="v" sz="150" flp="false" />
+<w x="20" y="20" o="h" sz="430" flp="false" />
+<w x="20" y="20" o="v" sz="140" flp="false" />
+<w x="440" y="200" o="v" sz="150" flp="false" />
+<w x="20" y="350" o="h" sz="430" flp="false" />
+<w x="20" y="200" o="v" sz="150" flp="false" />
+<w x="160" y="20" o="v" sz="140" flp="false" />
+<w x="160" y="200" o="v" sz="150" flp="false" />
+<w x="310" y="220" o="v" sz="130" flp="false" />
+<w x="310" y="20" o="v" sz="140" flp="false" />
+<w x="420" y="200" o="h" sz="50" flp="false" />
 	</elements>
 </circuit>
