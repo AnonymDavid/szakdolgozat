@@ -1,21 +1,18 @@
 import numpy as np
 import cv2
-from dataclasses import dataclass
 from typing import List, NamedTuple
 from enum import Enum
 import math
+import imutils
 import sys
 import os.path
 from zipfile import ZipFile
-import random
-from datetime import datetime
 
 from tensorflow import keras
 
 import time
 
 # ----- CONSTANTS -----
-CNT_DELETE_PERCENT = 15
 POINT_SIMILARITY_COMPARE_AREA_RADIUS = 15
 LINE_MIN_LENGTH = 110
 LINE_COUNT_CHECK_FOR_ROTATION = 10
@@ -23,27 +20,19 @@ LINE_SEARCH_ANGLE_THRESHOLD = 5 # degrees, both ways
 LINE_CHECK_SIMILARITY_THRESHOLD = 15
 LINE_AGGREGATION_SIMILARITY_THRESHOLD = 25
 COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = 50
-COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = 420
+COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = 350
 COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = 16
 COMPONENT_MIN_BOX_SIZE = 200
 COMPONENT_BOX_SIZE_OFFSET = 60
 OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = 30
 OUTPUT_SCALE = 3
-
-# temp:
 PICTURE_SCALE = 20
-
-
 
 
 # ----- TYPES -----
 class Orientation(Enum):
-    HORIZONTAL_LEFT = 0
-    HORIZONTAL_RIGHT = 1
-    VERTICAL_TOP = 2
-    VERTICAL_BOT = 3
-    HORIZONTAL = 4
-    VERTICAL = 5
+    HORIZONTAL = 0
+    VERTICAL = 1
 
 class Point(NamedTuple):
     x: int
@@ -53,16 +42,9 @@ class Line(NamedTuple):
     p1: Point
     p2: Point
 
-@dataclass
-class Endpoint:
+class Endpoint(NamedTuple):
     point: Point
     orientation: Orientation
-
-@dataclass
-class Intersection:
-    point: Point
-    lineCount: int
-
 
 
 # ----- METHODS -----
@@ -131,28 +113,6 @@ def pointsCloseArray(p1: Point, points: List[Point]) -> int:
         if isSamePoint(p1, points[i], POINT_SIMILARITY_COMPARE_AREA_RADIUS):
             return i
     return -1
-
-
-def rotateImage(image, angle: int):
-    """Rotates a given image by the given angle counterclockwise."""
-    height, width = image.shape[:2]
-    image_center = (width / 2, height / 2)
-
-    rotated_image = cv2.getRotationMatrix2D(image_center, angle, 1)
-
-    radians = math.radians(angle)
-    sin = math.sin(radians)
-    cos = math.cos(radians)
-    bound_w = int((height * abs(sin)) + (width * abs(cos)))
-    bound_h = int((height * abs(cos)) + (width * abs(sin)))
-
-    rotated_image[0, 2] += ((bound_w / 2) - image_center[0])
-    rotated_image[1, 2] += ((bound_h / 2) - image_center[1])
-
-    rotated_image = cv2.warpAffine(image, rotated_image, (bound_w, bound_h))
-
-    return rotated_image
-
 
 def resizeImage(src, percent: int):
     return cv2.resize(src, (int(src.shape[1]*percent/100), int(src.shape[0]*percent/100)))
@@ -287,14 +247,18 @@ if not os.path.isfile(str(sys.argv[1])):
 img = cv2.imread(sys.argv[1])
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-gray = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)))
 gray = cv2.medianBlur(gray, 7)
 
 thresh = cv2.threshold(gray, 110, 255, cv2.THRESH_BINARY)[1]
 
 thresh = 255 - thresh
 
+thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)))
+
 if len(sys.argv) > 2:
+    if 6 < int(sys.argv[2]) < 0:
+        exit("Canvas is out of range! The number must be between 0 and 5!")
+    
     img = putOnCanvas(img, 100 - int(sys.argv[2]) * 10)
     thresh = putOnCanvas(thresh, 100 - int(sys.argv[2]) * 10)
 
@@ -304,7 +268,7 @@ POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.00375)
 LINE_MIN_LENGTH = round(biggerSide*0.0275)
 LINE_CHECK_SIMILARITY_THRESHOLD = round(biggerSide*0.00375)
 COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = round(biggerSide*0.0125)
-COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = round(biggerSide*0.105)
+COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = round(biggerSide*0.0875)
 COMPONENT_MIN_BOX_SIZE = round(biggerSide*0.05)
 COMPONENT_BOX_SIZE_OFFSET = round(biggerSide*0.015)
 OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.0075)
@@ -349,9 +313,9 @@ while checkedLineCount < len(linesP) and differentLineCount < LINE_COUNT_CHECK_F
     
 avgAngleDiff /= differentLineCount
 
-thresh = rotateImage(thresh, avgAngleDiff)
-gray = rotateImage(gray, avgAngleDiff)
-img = rotateImage(img, avgAngleDiff)
+thresh = imutils.rotate_bound(thresh, -avgAngleDiff)
+gray = imutils.rotate_bound(gray, -avgAngleDiff)
+img = imutils.rotate_bound(img, -avgAngleDiff)
 
 
 # get offset for output
@@ -561,7 +525,7 @@ for c in components:
     componentImg = thresh[c[0][1]:c[1][1], c[0][0]:c[1][0]]
     
     if c[2] == Orientation.VERTICAL:
-        componentImg = rotateImage(componentImg, 90)
+        componentImg = imutils.rotate_bound(componentImg, -90)
     
     componentImg = cv2.resize(componentImg, dsize=(150,150), interpolation=cv2.INTER_CUBIC)
     componentImg = componentImg.reshape(-1, 150, 150, 1)
