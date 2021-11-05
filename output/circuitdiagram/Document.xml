@@ -2,7 +2,7 @@
 <circuit version="1.4" xmlns="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document">
 	<properties>
 		<width>4032</width>
-		<height>3024</height>
+		<height>2268</height>
 	</properties>
 	<definitions>
 		<src col="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/components/common">
@@ -17,59 +17,3 @@
 		</src>
 	</definitions>
 	<elements>
-		<c id="0" tp="{7}" x="140" y="360" o="h" sz="80" flp="false">
-			<prs>
-				<p k="style" v="IEC" />
-				<p k="text" v="" />
-				<p k="resistance" v="1" />
-				<p k="showResistance" v="False" />
-				<p k="t" v="Standard" />
-			</prs>
-			<cns />
-		</c>
-		<c id="1" tp="{3}" x="120" y="20" o="h" sz="100" flp="false">
-			<prs>
-				<p k="text" v="" />
-				<p k="inductance" v="0.1" />
-				<p k="showInductance" v="False" />
-			</prs>
-			<cns />
-		</c>
-		<c id="2" tp="{6}" x="360" y="180" o="v" sz="10" flp="false">
-			<prs>
-				<p k="style" v="IEC" />
-				<p k="text" v="" />
-				<p k="capacitance" v="0.00000" />
-				<p k="showCapacitance" v="False" />
-				<p k="t" v="Standard" />
-			</prs>
-		<cns />
-		</c>
-		<c id="3" tp="{4}" x="40" y="170" o="v" sz="30" flp="false">
-			<prs>
-				<p k="voltage" v="5" />
-				<p k="frequency" v="50" />
-				<p k="showvoltage" v="False" />
-				<p k="t" v="Battery" />
-			</prs>
-			<cns />
-		</c>
-		<c id="4" tp="{0}" x="500" y="170" o="v" sz="40" flp="false">
-			<prs>
-				<p k="t" v="Generic" />
-				<p k="islit" v="False" />
-			</prs>
-			<cns />
-		</c>
-<w x="40" y="360" o="h" sz="100" flp="false" />
-<w x="40" y="200" o="v" sz="160" flp="false" />
-<w x="220" y="360" o="h" sz="280" flp="false" />
-<w x="500" y="210" o="v" sz="150" flp="false" />
-<w x="220" y="10" o="h" sz="280" flp="false" />
-<w x="500" y="20" o="v" sz="150" flp="false" />
-<w x="40" y="20" o="h" sz="80" flp="false" />
-<w x="40" y="20" o="v" sz="150" flp="false" />
-<w x="360" y="20" o="v" sz="160" flp="false" />
-<w x="360" y="190" o="v" sz="170" flp="false" />
-	</elements>
-</circuit>

@@ -1,46 +1,37 @@
 import numpy as np
 import cv2
-from dataclasses import dataclass
 from typing import List, NamedTuple
 from enum import Enum
 import math
+import imutils
 import sys
 import os.path
-import random
-from datetime import datetime
 
 import time
 
-# ----- CONSTANTS ----- #TODO: all should be percent?
-CNT_DELETE_PERCENT = 15
+# ----- CONSTANTS -----
 POINT_SIMILARITY_COMPARE_AREA_RADIUS = 15
-LINE_MIN_LENGTH = 110
+LINE_MIN_LENGTH = 90
+LINE_PERSPECTIVE_MIN_LENGTH = 200
 LINE_COUNT_CHECK_FOR_ROTATION = 10
 LINE_SEARCH_ANGLE_THRESHOLD = 5 # degrees, both ways
 LINE_CHECK_SIMILARITY_THRESHOLD = 15
 LINE_AGGREGATION_SIMILARITY_THRESHOLD = 25
 COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = 50
-COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = 300
+COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = 350
 COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = 16
-COMPONENT_MIN_BOX_SIZE = 230
+COMPONENT_MIN_BOX_SIZE = 200
 COMPONENT_BOX_SIZE_OFFSET = 60
+PERSPECTIVE_IMAGE_OFFSET = 200
 OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = 30
 OUTPUT_SCALE = 3
-
-# temp:
-PICTURE_SCALE = 25
-
-
+PICTURE_SCALE = 20
 
 
 # ----- TYPES -----
 class Orientation(Enum):
-    HORIZONTAL_LEFT = 0
-    HORIZONTAL_RIGHT = 1
-    VERTICAL_TOP = 2
-    VERTICAL_BOT = 3
-    HORIZONTAL = 4
-    VERTICAL = 5
+    HORIZONTAL = 0
+    VERTICAL = 1
 
 class Point(NamedTuple):
     x: int
@@ -50,22 +41,16 @@ class Line(NamedTuple):
     p1: Point
     p2: Point
 
-@dataclass
-class Endpoint:
+class Endpoint(NamedTuple):
     point: Point
     orientation: Orientation
-
-@dataclass
-class Intersection:
-    point: Point
-    lineCount: int
-
 
 
 # ----- METHODS -----
 def getLineLength(l: Line) -> float:
     """Get the length of a line."""
     return math.sqrt( ((l.p2.x-l.p1.x)**2 + (l.p2.y-l.p1.y)**2) )
+
 
 def getLineAngle(l: Line) -> float:
     """Get the angle of line with the horizontal axis."""
@@ -76,15 +61,7 @@ def getLineAngle(l: Line) -> float:
     if angle < 0:
         angle = 360 + angle
     return angle
-# Angle:
-#                       90
-#             135                45
-# 
-#        180          Origin           0
-# 
-#            225                315
-# 
-#                      270
+
 
 def convertHoughToLineList(hl) -> List[Line]:
     """Converts the output of HoughLineP to Line array."""
@@ -94,9 +71,11 @@ def convertHoughToLineList(hl) -> List[Line]:
     
     return lines
 
+
 def convertHoughToLine(hl) -> Line:
     """Converts a HoughLinesP format line to Line."""
     return Line(Point(hl[0][0], hl[0][1]), Point(hl[0][2], hl[0][3]))
+
 
 def isSameLine(l1: Line, l2: Line) -> bool:
     """Check if the given lines are the same based on threir endpoint position and a position threshold constant."""
@@ -110,11 +89,13 @@ def isSameLine(l1: Line, l2: Line) -> bool:
         return True
     return False
 
+
 def isSamePoint(p1: Point, p2: Point, threshold: int) -> bool:
     """Check if the given points are the same based on an area threshold constant."""
     if abs(p1.x - p2.x) < threshold and abs(p1.y - p2.y) < threshold:
         return True
     return False
+
 
 def pointsCloseArray(p1: Point, points: List[Point]) -> int:
     """Check if the given point is close to another in the array."""
@@ -123,28 +104,44 @@ def pointsCloseArray(p1: Point, points: List[Point]) -> int:
             return i
     return -1
 
-def rotateImage(image, angle: int):
-    """Rotates a given image by the given angle counterclockwise."""
-    height, width = image.shape[:2]
-    image_center = (width / 2, height / 2)
-
-    rotated_image = cv2.getRotationMatrix2D(image_center, angle, 1)
-
-    radians = math.radians(angle)
-    sin = math.sin(radians)
-    cos = math.cos(radians)
-    bound_w = int((height * abs(sin)) + (width * abs(cos)))
-    bound_h = int((height * abs(cos)) + (width * abs(sin)))
-
-    rotated_image[0, 2] += ((bound_w / 2) - image_center[0])
-    rotated_image[1, 2] += ((bound_h / 2) - image_center[1])
-
-    rotated_image = cv2.warpAffine(image, rotated_image, (bound_w, bound_h))
-
-    return rotated_image
-
 def resizeImage(src, percent: int):
     return cv2.resize(src, (int(src.shape[1]*percent/100), int(src.shape[0]*percent/100)))
+
+def getIntersection(line1, line2):
+    x1 = line1.p1.x
+    x2 = line1.p2.x
+    y1 = line1.p1.y
+    y2 = line1.p2.y
+    x3 = line2.p1.x
+    x4 = line2.p2.x
+    y3 = line2.p1.y
+    y4 = line2.p2.y
+
+    px = ( (x1*y2-y1*x2)*(x3-x4) - (x1-x2)*(x3*y4-y3*x4) ) / ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) ) 
+    py = ( (x1*y2-y1*x2)*(y3-y4) - (y1-y2)*(x3*y4-y3*x4) ) / ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
+    
+    return Point(round(px), round(py))
+
+def putOnCanvas(image, imgPercent):
+    if len(image.shape) == 3:
+        canvas = np.zeros((image.shape[0], image.shape[1], image.shape[2]), dtype='uint8')
+    else:
+        canvas = np.zeros((image.shape[0], image.shape[1]), dtype='uint8')
+
+    image = resizeImage(image, imgPercent)
+
+    offsetX = round((canvas.shape[1] - image.shape[1]) / 2)
+    offsetY = round((canvas.shape[0] - image.shape[0]) / 2)
+
+    x1 = offsetX
+    x2 = offsetX + image.shape[1]
+    y1 = offsetY
+    y2 = offsetY + image.shape[0]
+
+    canvas[y1:y2, x1:x2] = image
+
+    return canvas
+
 
 def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, outputLines, horizontalCount):
     if lineIdx in checkedLines:
@@ -166,7 +163,7 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
             compEpCount += 1
     
     if compEpCount < len(component_endpoints):
-        lineTemp[lineCompSide] = [round(round(component_endpoints[compEpCount].x/OUTPUT_SCALE, -1)), round(round(component_endpoints[compEpCount].y/OUTPUT_SCALE, -1))]
+        lineTemp[lineCompSide] = [int(round(component_endpoints[compEpCount].x/OUTPUT_SCALE, -1)), int(round(component_endpoints[compEpCount].y/OUTPUT_SCALE, -1))]
     
     if lineIdx < horizontalCount:
         closestInterestDiff = 1000
@@ -225,17 +222,26 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
             followLine(lines, lineC, 1-samePoint, component_endpoints, checkedLines, outputLines, horizontalCount)
 
 
+def createDirectoryTree():
+    filenames = ["output/_rels/", "output/circuitdiagram/", "output/docProps/"]
+    for filename in filenames:
+        if not os.path.exists(os.path.dirname(filename)):
+            try:
+                os.makedirs(os.path.dirname(filename))
+            except:
+                print("Cannot create directories for output!")
+
+
 
 
 # ----- MAIN -----
 
 
 # load in CNN model
-
 t1 = time.perf_counter()
 
-if not len(sys.argv) == 2:
-    exit("No parameter given!")
+if len(sys.argv) < 2:
+    exit("Not enough parameter given!")
 
 if not os.path.isfile(str(sys.argv[1])):
     exit("The file does not exist!")
@@ -249,58 +255,106 @@ thresh = cv2.threshold(gray, 110, 255, cv2.THRESH_BINARY)[1]
 
 thresh = 255 - thresh
 
-# thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)), iterations=3)
-# thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (5,5)), iterations=3)
+thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)))
 
+if len(sys.argv) > 2:
+    if 5 < int(sys.argv[2]) or int(sys.argv[2]) < 0:
+        exit("Canvas number is out of range! The number must be between 0 and 5!")
+    
+    img = putOnCanvas(img, 100 - int(sys.argv[2]) * 10)
+    thresh = putOnCanvas(thresh, 100 - int(sys.argv[2]) * 10)
 
-# ROTATE VIA LONGEST LINES AVG ANGLE
-linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, LINE_MIN_LENGTH, 0))
+biggerSide = img.shape[0] if img.shape[0] > img.shape[1] else img.shape[1]
 
+POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.00375)
+LINE_MIN_LENGTH = round(biggerSide*0.0225)
+LINE_PERSPECTIVE_MIN_LENGTH = round(biggerSide*0.03)
+LINE_CHECK_SIMILARITY_THRESHOLD = round(biggerSide*0.00375)
+COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = round(biggerSide*0.0125)
+COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = round(biggerSide*0.0875)
+COMPONENT_MIN_BOX_SIZE = round(biggerSide*0.05)
+COMPONENT_BOX_SIZE_OFFSET = round(biggerSide*0.015)
+PERSPECTIVE_IMAGE_OFFSET = round(biggerSide*0.13)
+OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.0075)
+
+canny = cv2.Canny(thresh, 100, 150)
+canny = cv2.dilate(canny, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)))
+
+linesP = list(cv2.HoughLinesP(canny, 1, np.pi/180, LINE_PERSPECTIVE_MIN_LENGTH, None, LINE_PERSPECTIVE_MIN_LENGTH, 0))
 if linesP is None:
     exit("No lines detected")
 
-linesP.sort(key=lambda l: getLineLength(convertHoughToLine(l)), reverse=True )
-
-avgAngleDiff = 0
 linesP = convertHoughToLineList(linesP)
 
-rotatelines = []
-checkedLineCount = 0
-differentLineCount = 0
-# rotatelines.append(linesP[0])
+topLine = Line(Point(0, img.shape[0]), Point(0, img.shape[0]))
+botLine = Line(Point(0, 0), Point(0, 0))
+leftLine = Line(Point(img.shape[1], 0), Point(img.shape[1], 0))
+rightLine = Line(Point(0, 0), Point(0, 0))
 
-while checkedLineCount < len(linesP) and differentLineCount < LINE_COUNT_CHECK_FOR_ROTATION:
-    line = linesP[checkedLineCount]
-    i = 1
-    while i < differentLineCount and not isSameLine(line, rotatelines[i]):
-        i += 1
-    if (i >= differentLineCount):
-        angle = getLineAngle(line)
-        angle = angle - (int)(angle / 90)*90
-        if (angle > 45):
-            angle = angle - 90
-        
-        if differentLineCount <= 1:
-            currentDiffWithAvg = 0
-        else:
-            currentDiffWithAvg = abs((avgAngleDiff/differentLineCount) - angle)
-        
-        if abs(currentDiffWithAvg - int(currentDiffWithAvg / 90) * 90) <= 20:
-            avgAngleDiff += angle
-            rotatelines.append(line)
-            differentLineCount += 1
+topValue = img.shape[0]
+botValue = 0
+leftValue = img.shape[1]
+rightValue = 0
 
-    checkedLineCount += 1
+
+for l in linesP:
+    l_left, l_right = ((l.p1, l.p2) if l.p1.x < l.p2.x else (l.p2, l.p1))
+    l_top, l_bot = ((l.p1, l.p2) if l.p1.y < l.p2.y else (l.p2, l.p1))
+    l_middle = Point(round(l_left.x+((l_right.x-l_left.x)/2)), round(l_top.y+((l_bot.y-l_top.y)/2)))
     
-avgAngleDiff /= differentLineCount
+    if abs(l.p2.x-l.p1.x) > abs(l.p2.y-l.p1.y):
+        # horizontal
+        if l_middle.y < topValue:
+            topValue = l_middle.y
+            topLine = Line(Point(l_left.x, l_left.y), Point(l_right.x, l_right.y))
+        elif l_middle.y > botValue:
+            botValue = l_middle.y
+            botLine = Line(Point(l_left.x, l_left.y), Point(l_right.x, l_right.y))
+    else:
+        # vertical
+        if l_middle.x < leftValue:
+            leftValue = l_middle.x
+            leftLine = Line(Point(l_left.x, l_left.y), Point(l_right.x, l_right.y))
+        elif l_middle.x > rightValue:
+            rightValue = l_middle.x
+            rightLine = Line(Point(l_left.x, l_left.y), Point(l_right.x, l_right.y))
 
-thresh = rotateImage(thresh, avgAngleDiff)
-gray = rotateImage(gray, avgAngleDiff)
-img = rotateImage(img, avgAngleDiff)
+# cv2.circle(img, (intersection.x, intersection.y), 15, (255,0,255), thickness=-1)
+tl = getIntersection(topLine, leftLine)
+bl = getIntersection(botLine, leftLine)
+tr = getIntersection(topLine, rightLine)
+br = getIntersection(botLine, rightLine)
+
+pts1 = np.float32([[tl.x, tl.y],[tr.x, tr.y],[br.x, br.y],[bl.x, bl.y]])
+
+w = getLineLength(Line(Point(pts1[0][0], pts1[0][1]), Point(pts1[1][0], pts1[1][1])))
+h = getLineLength(Line(Point(pts1[0][0], pts1[0][1]), Point(pts1[3][0], pts1[3][1])))
+
+pts2 = np.float32([[PERSPECTIVE_IMAGE_OFFSET, PERSPECTIVE_IMAGE_OFFSET],[PERSPECTIVE_IMAGE_OFFSET+w, PERSPECTIVE_IMAGE_OFFSET],[PERSPECTIVE_IMAGE_OFFSET+w, PERSPECTIVE_IMAGE_OFFSET+h],[PERSPECTIVE_IMAGE_OFFSET, PERSPECTIVE_IMAGE_OFFSET+h]])
+
+M = cv2.getPerspectiveTransform(pts1,pts2)
+img = cv2.warpPerspective(img,M,(img.shape[1], img.shape[0]))
+thresh = cv2.warpPerspective(thresh,M,(img.shape[1], img.shape[0]))
+
+# get offset for output
+contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+bestContourSize = [0,0,0,0]
+for cnt in contours:
+    peri = cv2.arcLength(cnt, True)
+    approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
+
+    x, y, w, h = cv2.boundingRect(approx)
+
+    if w*h > bestContourSize[2]*bestContourSize[3] and w < img.shape[1]-100 and h < img.shape[0]-100:
+        bestContourSize = [x,y,w,h]
+        cont = cnt
+
+outputOffset = [int(round((x-50)/OUTPUT_SCALE, -1)), int(round((y-50)/OUTPUT_SCALE, -1))]
 
 
 # finding connection lines
-linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, LINE_MIN_LENGTH, 0))
+linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, LINE_MIN_LENGTH, None, LINE_MIN_LENGTH, 0))
 if linesP is None:
     exit("No lines detected")
 
@@ -393,7 +447,6 @@ compCount = 0
 
 # horizontal components
 for hr in ep_HR:
-    # cv2.rectangle(img, (hr.x + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH, hr.y - round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2)), (hr.x + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH, hr.y + round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2)), (0,0,255), 5)
     hlc = compCount
     while (hlc < len(ep_HL) and
         (
@@ -408,10 +461,10 @@ for hr in ep_HR:
         compSize = ep_HL[hlc].x - hr.x
         if compSize < COMPONENT_MIN_BOX_SIZE:
             compSize = COMPONENT_MIN_BOX_SIZE
-        components.append([Point(hr.x - COMPONENT_BOX_SIZE_OFFSET, hr.y - round(compSize/2)), Point(ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET, ep_HL[hlc].y + round(compSize / 2)), Orientation.HORIZONTAL, Point(hr.x, hr.y), Point(ep_HL[hlc].x, ep_HL[hlc].y), Point(-1, -1)])
+        components.append([Point(hr.x - COMPONENT_BOX_SIZE_OFFSET, hr.y - round(compSize/2)), Point(ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET, ep_HL[hlc].y + round(compSize / 2)), Orientation.HORIZONTAL, Point(hr.x, hr.y), Point(ep_HL[hlc].x, ep_HL[hlc].y)])
         component_endpoints.append(Point(hr.x, hr.y))
-        component_endpoints.append(Point(hr.x, ep_HL[hlc].y))
-
+        component_endpoints.append(Point(ep_HL[hlc].x, hr.y))
+        
         ep_HL[compCount], ep_HL[hlc] = ep_HL[hlc], ep_HL[compCount]
         compCount += 1
     else:
@@ -424,7 +477,6 @@ for i in range(compCount, len(ep_HL)):
 # vertical components
 compCount = 0
 for vb in ep_VB:
-    # cv2.rectangle(img, (vb.x - round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2), vb.y + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH), (vb.x + round(COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2), vb.y + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH), (255,0,0), 8)
     vtc = compCount
     
     while (vtc < len(ep_VT) and
@@ -441,10 +493,10 @@ for vb in ep_VB:
         if compSize < COMPONENT_MIN_BOX_SIZE:
             compSize = COMPONENT_MIN_BOX_SIZE
         
-        components.append([Point(vb.x - round(compSize/2), vb.y - COMPONENT_BOX_SIZE_OFFSET), Point(ep_VT[vtc].x + round(compSize / 2), ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET), Orientation.VERTICAL, Point(vb.x, vb.y), Point(ep_VT[vtc].x, ep_VT[vtc].y), Point(-1, -1)])
+        components.append([Point(vb.x - round(compSize/2), vb.y - COMPONENT_BOX_SIZE_OFFSET), Point(ep_VT[vtc].x + round(compSize / 2), ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET), Orientation.VERTICAL, Point(vb.x, vb.y), Point(ep_VT[vtc].x, ep_VT[vtc].y)])
         component_endpoints.append(Point(vb.x, vb.y))
         component_endpoints.append(Point(vb.x, ep_VT[vtc].y))
-
+        
         ep_VT[compCount], ep_VT[vtc] = ep_VT[vtc], ep_VT[compCount]
         compCount += 1
     else:
@@ -454,86 +506,45 @@ for i in range(compCount, len(ep_VT)):
     solo_ep_VT.append(ep_VT[i])
 
 
-checkedLines = []
-outputLines = []
-componentId = 0
+# start output file
+createDirectoryTree()
+
+file = open("output/circuitdiagram/Document.xml", "w", newline='')
+file.write(
+    '<?xml version="1.0" encoding="utf-8"?>\n'
+    '<circuit version="1.4" xmlns="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document">\n'
+	'\t<properties>\n'
+    '\t\t<width>'+str(img.shape[1])+'</width>\n'
+    '\t\t<height>'+str(img.shape[0])+'</height>\n'
+    '\t</properties>\n'
+)
+file.write(
+    '\t<definitions>\n'
+	'\t\t<src col="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/components/common">\n'
+	'\t\t\t<add id="0" item="lamp" p4:guid="c0da4646-ffaf-48f0-8a56-2e8e07148ecf" p4:version="3.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />\n'
+	'\t\t\t<add id="1" item="acsource" p4:guid="8979c617-b041-4069-8769-0b76dc0e6c52" p4:version="1.2.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />\n'
+	'\t\t\t<add id="2" item="cell" p4:guid="8979c617-b041-4069-8769-0b76dc0e6c52" p4:version="1.2.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />\n'
+	'\t\t\t<add id="3" item="inductor" p4:guid="e6ebc838-fb6a-4078-8d03-7fed04cc6938" p4:version="2.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />\n'
+	'\t\t\t<add id="4" item="battery" p4:guid="8979c617-b041-4069-8769-0b76dc0e6c52" p4:version="1.2.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />\n'
+	'\t\t\t<add id="5" item="toggleswitch" p4:guid="421694bf-755a-4d50-b2ca-7273216ca17d" p4:version="1.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />\n'
+	'\t\t\t<add id="6" item="capacitor" p4:guid="154b7831-58e6-4126-b582-8c1cc2bdeb13" p4:version="4.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />\n'
+	'\t\t\t<add id="7" item="resistor" p4:guid="dab6d52b-51a0-49b0-bc40-3cda966148aa" p4:version="4.0.0" xmlns:p4="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document/component-descriptions" />\n'
+	'\t\t</src>\n'
+	'\t</definitions>\n'
+	'\t<elements>\n'
+)
+
 fileCount = 21
-# find third/forth connection on components if exists (transistor)
 for c in components:
-    compMiddleX = round(c[0].x + ((c[1].x - c[0].x) / 2))
-    compMiddleY = round(c[0].y + ((c[1].y - c[0].y) / 2))
-    if c[2] == Orientation.HORIZONTAL:
-        # top side
-        vbc = 0
-        while (vbc < len(solo_ep_VB) and
-        (
-            solo_ep_VB[vbc].x > compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_VB[vbc].x < compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_VB[vbc].y < compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
-            solo_ep_VB[vbc].y > compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
-        )):
-            vbc += 1
-    
-        if vbc < len(solo_ep_VB):
-            c[0] = Point(c[0].x, solo_ep_VB[vbc].y - COMPONENT_BOX_SIZE_OFFSET*2)
-            c[5] = Point(solo_ep_VB[vbc].x, solo_ep_VB[vbc].y)
-            component_endpoints.append(c[5])
-        
-        # bot side
-        vtc = 0
-        while (vtc < len(solo_ep_VT) and
-        (
-            solo_ep_VT[vtc].x > compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_VT[vtc].x < compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_VT[vtc].y > compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
-            solo_ep_VT[vtc].y < compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
-        )):
-            vtc += 1
-    
-        if vtc < len(solo_ep_VT):
-            c[1] = Point(c[1].x, solo_ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET*2)
-            c[5] = Point(solo_ep_VT[vtc].x, solo_ep_VT[vtc].y)
-            component_endpoints.append(c[5])
-    else:
-        # right side
-        hlc = 0
-        while (hlc < len(solo_ep_HL) and
-        (
-            solo_ep_HL[hlc].y > compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_HL[hlc].y < compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_HL[hlc].x > compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
-            solo_ep_HL[hlc].x < compMiddleX + COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
-        )):
-            hlc += 1
-    
-        if hlc < len(solo_ep_HL):
-            c[1] = Point(solo_ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET*2, c[1].y)
-            c[5] = Point(solo_ep_HL[hlc].x, solo_ep_HL[hlc].y)
-            component_endpoints.append(c[5])
-        
-        # left side
-        hrc = 0
-        while (hrc < len(solo_ep_HR) and
-        (
-            solo_ep_HR[hrc].y > compMiddleY + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_HR[hrc].y < compMiddleY - COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
-            solo_ep_HR[hrc].x < compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH or
-            solo_ep_HR[hrc].x > compMiddleX - COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH
-        )):
-            hrc += 1
-        
-        if hrc < len(solo_ep_HR):
-            c[0] = Point(solo_ep_HR[hrc].x - COMPONENT_BOX_SIZE_OFFSET*2, c[0].y)
-            c[5] = Point(solo_ep_HR[hrc].x, solo_ep_HR[hrc].y)
-            component_endpoints.append(c[5])
-    
-    
-    # cv2.rectangle(img, (c[0][0], c[0][1]), (c[1][0], c[1][1]), (0,0,255), 5)
+    cv2.rectangle(img, (c[0][0], c[0][1]), (c[1][0], c[1][1]), (0,0,255), 5)
 
     componentImg = thresh[c[0][1]:c[1][1], c[0][0]:c[1][0]]
-    componentImg = cv2.erode(componentImg, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)))
+
+    # componentImg = cv2.erode(componentImg, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)))
+    
     if c[2] == Orientation.VERTICAL:
-        componentImg = rotateImage(componentImg, 90)
+        componentImg = imutils.rotate_bound(componentImg, -90)
+
     cv2.imwrite(str(fileCount)+".jpg", cv2.resize(componentImg, (150,150)))
     fileCount += 1
 

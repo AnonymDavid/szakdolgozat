@@ -466,9 +466,9 @@ for hr in ep_HR:
         compSize = ep_HL[hlc].x - hr.x
         if compSize < COMPONENT_MIN_BOX_SIZE:
             compSize = COMPONENT_MIN_BOX_SIZE
-        components.append([Point(hr.x - COMPONENT_BOX_SIZE_OFFSET, hr.y - round(compSize/2)), Point(ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET, ep_HL[hlc].y + round(compSize / 2)), Orientation.HORIZONTAL, Point(hr.x, hr.y), Point(ep_HL[hlc].x, ep_HL[hlc].y), Point(-1, -1)])
+        components.append([Point(hr.x - COMPONENT_BOX_SIZE_OFFSET, hr.y - round(compSize/2)), Point(ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET, ep_HL[hlc].y + round(compSize / 2)), Orientation.HORIZONTAL, Point(hr.x, hr.y), Point(ep_HL[hlc].x, ep_HL[hlc].y)])
         component_endpoints.append(Point(hr.x, hr.y))
-        component_endpoints.append(Point(hr.x, ep_HL[hlc].y))
+        component_endpoints.append(Point(ep_HL[hlc].x, hr.y))
         
         ep_HL[compCount], ep_HL[hlc] = ep_HL[hlc], ep_HL[compCount]
         compCount += 1
@@ -498,7 +498,7 @@ for vb in ep_VB:
         if compSize < COMPONENT_MIN_BOX_SIZE:
             compSize = COMPONENT_MIN_BOX_SIZE
         
-        components.append([Point(vb.x - round(compSize/2), vb.y - COMPONENT_BOX_SIZE_OFFSET), Point(ep_VT[vtc].x + round(compSize / 2), ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET), Orientation.VERTICAL, Point(vb.x, vb.y), Point(ep_VT[vtc].x, ep_VT[vtc].y), Point(-1, -1)])
+        components.append([Point(vb.x - round(compSize/2), vb.y - COMPONENT_BOX_SIZE_OFFSET), Point(ep_VT[vtc].x + round(compSize / 2), ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET), Orientation.VERTICAL, Point(vb.x, vb.y), Point(ep_VT[vtc].x, ep_VT[vtc].y)])
         component_endpoints.append(Point(vb.x, vb.y))
         component_endpoints.append(Point(vb.x, ep_VT[vtc].y))
         
@@ -566,7 +566,7 @@ for c in components:
         flipped = True
         
     compOutputPos = Point(int(round(c[3][0]/OUTPUT_SCALE - outputOffset[0], -1)), int(round(c[3][1]/OUTPUT_SCALE - outputOffset[1], -1)))
-    compOutputSize = int(round((abs(c[4][0]-c[3][0]) if c[2] == Orientation.HORIZONTAL else abs(c[4][1]-c[3][1]))/OUTPUT_SCALE, -1))
+    compOutputSize = int(round((abs(c[4][0]/OUTPUT_SCALE - c[3][0]/OUTPUT_SCALE) if c[2] == Orientation.HORIZONTAL else abs(c[4][1]/OUTPUT_SCALE - c[3][1]/OUTPUT_SCALE)), -1))
 
     if bestPrediction == 0:
         cv2.putText(img, "battery", (c[0][0], c[0][1]), cv2.FONT_HERSHEY_PLAIN, 5, (0,0,255), thickness=3)
@@ -684,8 +684,6 @@ for c in components:
             foundLine = 3
         elif ( line.p1.x == c[4].x and line.p1.y == c[4].y ) or ( line.p2.x == c[4].x and line.p2.y == c[4].y ):
             foundLine = 4
-        elif ( (not c[5].x == -1) and line.p1.x == c[5].x and line.p1.y == c[5].y ) or ( line.p2.x == c[5].x and line.p2.y == c[5].y ):
-            foundLine = 5
         
         if not foundLine == 0:
             oLine = Line(Point(line.p1.x, line.p1.y), Point(line.p2.x, line.p2.y))
@@ -694,16 +692,7 @@ for c in components:
     
     cv2.rectangle(img, (c[0][0], c[0][1]), (c[1][0], c[1][1]), (255,0,255), 5)
 
-# Search for remaining lines (endpoints not connected to other line endpoints)
-for i in range(len(lines)):
-    if not i in checkedLines:
-        cc = 0
-        while cc < len(components) and (lines[i].p1.x <= components[cc][0].x or lines[i].p1.x >= components[cc][1].x or lines[i].p1.y <= components[cc][0].y or lines[i].p1.y >= components[cc][1].y) and (lines[i].p2.x <= components[cc][0].x or lines[i].p2.x >= components[cc][1].x or lines[i].p2.y <= components[cc][0].y or lines[i].p2.y >= components[cc][1].y):
-            cc += 1
-        if cc >= len(components):
-            followLine(lines, i, 0, component_endpoints, checkedLines, outputLines, len(horizontal))
-
-# Final adjustments on output lines
+# adjustments on output lines
 for lineC in range(len(outputLines)):
     lineTemp = [[outputLines[lineC].p1.x, outputLines[lineC].p1.y], [outputLines[lineC].p2.x, outputLines[lineC].p2.y]]
     
@@ -737,6 +726,15 @@ for lineC in range(len(outputLines)):
         lineCheckSide += 1
     
     outputLines[lineC] = Line(Point(round(lineTemp[0][0]), round(lineTemp[0][1])), Point(round(lineTemp[1][0]), round(lineTemp[1][1])))
+
+# Search for remaining lines (endpoints not connected to other line endpoints)
+for i in range(len(lines)):
+    if not i in checkedLines:
+        cc = 0
+        while cc < len(components) and (lines[i].p1.x <= components[cc][0].x or lines[i].p1.x >= components[cc][1].x or lines[i].p1.y <= components[cc][0].y or lines[i].p1.y >= components[cc][1].y) and (lines[i].p2.x <= components[cc][0].x or lines[i].p2.x >= components[cc][1].x or lines[i].p2.y <= components[cc][0].y or lines[i].p2.y >= components[cc][1].y):
+            cc += 1
+        if cc >= len(components):
+            followLine(lines, i, 0, component_endpoints, checkedLines, outputLines, len(horizontal))
 
 # Draw lines to output
 for l in outputLines:
