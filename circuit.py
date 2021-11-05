@@ -14,7 +14,8 @@ import time
 
 # ----- CONSTANTS -----
 POINT_SIMILARITY_COMPARE_AREA_RADIUS = 15
-LINE_MIN_LENGTH = 110
+LINE_MIN_LENGTH = 90
+LINE_PERSPECTIVE_MIN_LENGTH = 200
 LINE_COUNT_CHECK_FOR_ROTATION = 10
 LINE_SEARCH_ANGLE_THRESHOLD = 5 # degrees, both ways
 LINE_CHECK_SIMILARITY_THRESHOLD = 15
@@ -24,6 +25,7 @@ COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = 350
 COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = 16
 COMPONENT_MIN_BOX_SIZE = 200
 COMPONENT_BOX_SIZE_OFFSET = 60
+PERSPECTIVE_IMAGE_OFFSET = 200
 OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = 30
 OUTPUT_SCALE = 3
 PICTURE_SCALE = 20
@@ -62,15 +64,6 @@ def getLineAngle(l: Line) -> float:
     if angle < 0:
         angle = 360 + angle
     return angle
-# Angle:
-#                       90
-#             135                45
-# 
-#        180          Origin           0
-# 
-#            225                315
-# 
-#                      270
 
 
 def convertHoughToLineList(hl) -> List[Line]:
@@ -117,6 +110,20 @@ def pointsCloseArray(p1: Point, points: List[Point]) -> int:
 def resizeImage(src, percent: int):
     return cv2.resize(src, (int(src.shape[1]*percent/100), int(src.shape[0]*percent/100)))
 
+def getIntersection(line1, line2):
+    x1 = line1.p1.x
+    x2 = line1.p2.x
+    y1 = line1.p1.y
+    y2 = line1.p2.y
+    x3 = line2.p1.x
+    x4 = line2.p2.x
+    y3 = line2.p1.y
+    y4 = line2.p2.y
+
+    px = ( (x1*y2-y1*x2)*(x3-x4) - (x1-x2)*(x3*y4-y3*x4) ) / ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) ) 
+    py = ( (x1*y2-y1*x2)*(y3-y4) - (y1-y2)*(x3*y4-y3*x4) ) / ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
+    
+    return Point(round(px), round(py))
 
 def putOnCanvas(image, imgPercent):
     if len(image.shape) == 3:
@@ -256,8 +263,8 @@ thresh = 255 - thresh
 thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)))
 
 if len(sys.argv) > 2:
-    if 6 < int(sys.argv[2]) < 0:
-        exit("Canvas is out of range! The number must be between 0 and 5!")
+    if 5 < int(sys.argv[2]) or int(sys.argv[2]) < 0:
+        exit("Canvas number is out of range! The number must be between 0 and 5!")
     
     img = putOnCanvas(img, 100 - int(sys.argv[2]) * 10)
     thresh = putOnCanvas(thresh, 100 - int(sys.argv[2]) * 10)
@@ -265,65 +272,80 @@ if len(sys.argv) > 2:
 biggerSide = img.shape[0] if img.shape[0] > img.shape[1] else img.shape[1]
 
 POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.00375)
-LINE_MIN_LENGTH = round(biggerSide*0.0275)
+LINE_MIN_LENGTH = round(biggerSide*0.0225)
+LINE_PERSPECTIVE_MIN_LENGTH = round(biggerSide*0.03)
 LINE_CHECK_SIMILARITY_THRESHOLD = round(biggerSide*0.00375)
 COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = round(biggerSide*0.0125)
 COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = round(biggerSide*0.0875)
 COMPONENT_MIN_BOX_SIZE = round(biggerSide*0.05)
 COMPONENT_BOX_SIZE_OFFSET = round(biggerSide*0.015)
+PERSPECTIVE_IMAGE_OFFSET = round(biggerSide*0.13)
 OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.0075)
 
-# ROTATE VIA LONGEST LINES AVG ANGLE
-linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, LINE_MIN_LENGTH, 0))
+canny = cv2.Canny(thresh, 100, 150)
+canny = cv2.dilate(canny, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)))
 
+linesP = list(cv2.HoughLinesP(canny, 1, np.pi/180, LINE_PERSPECTIVE_MIN_LENGTH, None, LINE_PERSPECTIVE_MIN_LENGTH, 0))
 if linesP is None:
     exit("No lines detected")
 
-linesP.sort(key=lambda l: getLineLength(convertHoughToLine(l)), reverse=True )
-
-avgAngleDiff = 0
 linesP = convertHoughToLineList(linesP)
 
-rotatelines = []
-checkedLineCount = 0
-differentLineCount = 0
+topLine = Line(Point(0, img.shape[0]), Point(0, img.shape[0]))
+botLine = Line(Point(0, 0), Point(0, 0))
+leftLine = Line(Point(img.shape[1], 0), Point(img.shape[1], 0))
+rightLine = Line(Point(0, 0), Point(0, 0))
 
-while checkedLineCount < len(linesP) and differentLineCount < LINE_COUNT_CHECK_FOR_ROTATION:
-    line = linesP[checkedLineCount]
-    i = 1
-    while i < differentLineCount and not isSameLine(line, rotatelines[i]):
-        i += 1
-    if (i >= differentLineCount):
-        angle = getLineAngle(line)
-        angle = angle - (int)(angle / 90)*90
-        if (angle > 45):
-            angle = angle - 90
-        
-        if differentLineCount <= 1:
-            currentDiffWithAvg = 0
-        else:
-            currentDiffWithAvg = abs((avgAngleDiff/differentLineCount) - angle)
-        
-        if abs(currentDiffWithAvg - int(currentDiffWithAvg / 90) * 90) <= 20:
-            avgAngleDiff += angle
-            rotatelines.append(line)
-            differentLineCount += 1
+topValue = img.shape[0]
+botValue = 0
+leftValue = img.shape[1]
+rightValue = 0
 
-    checkedLineCount += 1
+
+for l in linesP:
+    l_left, l_right = ((l.p1, l.p2) if l.p1.x < l.p2.x else (l.p2, l.p1))
+    l_top, l_bot = ((l.p1, l.p2) if l.p1.y < l.p2.y else (l.p2, l.p1))
+    l_middle = Point(round(l_left.x+((l_right.x-l_left.x)/2)), round(l_top.y+((l_bot.y-l_top.y)/2)))
     
-avgAngleDiff /= differentLineCount
+    if abs(l.p2.x-l.p1.x) > abs(l.p2.y-l.p1.y):
+        # horizontal
+        if l_middle.y < topValue:
+            topValue = l_middle.y
+            topLine = Line(Point(l_left.x, l_left.y), Point(l_right.x, l_right.y))
+        elif l_middle.y > botValue:
+            botValue = l_middle.y
+            botLine = Line(Point(l_left.x, l_left.y), Point(l_right.x, l_right.y))
+    else:
+        # vertical
+        if l_middle.x < leftValue:
+            leftValue = l_middle.x
+            leftLine = Line(Point(l_left.x, l_left.y), Point(l_right.x, l_right.y))
+        elif l_middle.x > rightValue:
+            rightValue = l_middle.x
+            rightLine = Line(Point(l_left.x, l_left.y), Point(l_right.x, l_right.y))
 
-thresh = imutils.rotate_bound(thresh, -avgAngleDiff)
-gray = imutils.rotate_bound(gray, -avgAngleDiff)
-img = imutils.rotate_bound(img, -avgAngleDiff)
+# cv2.circle(img, (intersection.x, intersection.y), 15, (255,0,255), thickness=-1)
+tl = getIntersection(topLine, leftLine)
+bl = getIntersection(botLine, leftLine)
+tr = getIntersection(topLine, rightLine)
+br = getIntersection(botLine, rightLine)
 
+pts1 = np.float32([[tl.x, tl.y],[tr.x, tr.y],[br.x, br.y],[bl.x, bl.y]])
+
+w = getLineLength(Line(Point(pts1[0][0], pts1[0][1]), Point(pts1[1][0], pts1[1][1])))
+h = getLineLength(Line(Point(pts1[0][0], pts1[0][1]), Point(pts1[3][0], pts1[3][1])))
+
+pts2 = np.float32([[PERSPECTIVE_IMAGE_OFFSET, PERSPECTIVE_IMAGE_OFFSET],[PERSPECTIVE_IMAGE_OFFSET+w, PERSPECTIVE_IMAGE_OFFSET],[PERSPECTIVE_IMAGE_OFFSET+w, PERSPECTIVE_IMAGE_OFFSET+h],[PERSPECTIVE_IMAGE_OFFSET, PERSPECTIVE_IMAGE_OFFSET+h]])
+
+M = cv2.getPerspectiveTransform(pts1,pts2)
+img = cv2.warpPerspective(img,M,(img.shape[1], img.shape[0]))
+thresh = cv2.warpPerspective(thresh,M,(img.shape[1], img.shape[0]))
 
 # get offset for output
 contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 bestContourSize = [0,0,0,0]
 for cnt in contours:
-    # figuring out shapes
     peri = cv2.arcLength(cnt, True)
     approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
 
@@ -337,7 +359,7 @@ outputOffset = [int(round((x-50)/OUTPUT_SCALE, -1)), int(round((y-50)/OUTPUT_SCA
 
 
 # finding connection lines
-linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, 100, None, LINE_MIN_LENGTH, 0))
+linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, LINE_MIN_LENGTH, None, LINE_MIN_LENGTH, 0))
 if linesP is None:
     exit("No lines detected")
 
@@ -759,7 +781,7 @@ with ZipFile('output.cddx', mode='w') as zf:
 
 
 cv2.imshow("img", resizeImage(img, PICTURE_SCALE))
-cv2.imshow("thresh", resizeImage(thresh, PICTURE_SCALE))
+# cv2.imshow("thresh", resizeImage(thresh, PICTURE_SCALE))
 
 t2 = time.perf_counter()
 
