@@ -282,6 +282,8 @@ COMPONENT_BOX_SIZE_OFFSET = round(biggerSide*0.015)
 PERSPECTIVE_IMAGE_OFFSET = round(biggerSide*0.13)
 OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.0075)
 
+
+# tilt image for bird's eye view
 canny = cv2.Canny(thresh, 100, 150)
 canny = cv2.dilate(canny, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)))
 
@@ -300,7 +302,6 @@ topValue = img.shape[0]
 botValue = 0
 leftValue = img.shape[1]
 rightValue = 0
-
 
 for l in linesP:
     l_left, l_right = ((l.p1, l.p2) if l.p1.x < l.p2.x else (l.p2, l.p1))
@@ -324,7 +325,6 @@ for l in linesP:
             rightValue = l_middle.x
             rightLine = Line(Point(l_left.x, l_left.y), Point(l_right.x, l_right.y))
 
-# cv2.circle(img, (intersection.x, intersection.y), 15, (255,0,255), thickness=-1)
 tl = getIntersection(topLine, leftLine)
 bl = getIntersection(botLine, leftLine)
 tr = getIntersection(topLine, rightLine)
@@ -415,8 +415,8 @@ for line in linesP:
 
 lines = horizontal + vertical
 
-# finding and separating line endpoints
 
+# finding and separating line endpoints
 ep_HL = []
 ep_HR = []
 ep_VT = []
@@ -439,8 +439,8 @@ for line in vertical:
         ep_VB.append(line.p1)
 
 
-# finding components
 
+# finding components
 solo_ep_HL = []
 solo_ep_HR = []
 solo_ep_VT = []
@@ -752,7 +752,6 @@ file.write(
 file.close()
 
 # Rest of the files
-
 file = open("output/_rels/.rels", "w", newline='')
 file.write('<?xml version="1.0" encoding="utf-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Type="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/relationships/circuitDiagramDocument" Target="/circuitdiagram/Document.xml" Id="Rd91fbf4e19c745a9" /><Relationship Type="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/relationships/metadata/core-properties" Target="/docProps/core.xml" Id="Rd87aec61287b48ef" /></Relationships>')
 file.close()
@@ -769,6 +768,7 @@ file.close()
 file = open("output/[Content_Types].xml", "w", newline='')
 file.write('<?xml version="1.0" encoding="utf-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/vnd.circuitdiagram.document.main+xml" /><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml" /><Override PartName="/docProps/core.xml" ContentType="application/vnd.circuitdiagram.document.core-properties+xml" /></Types>')
 file.close()
+
 
 # Compressing files to final output
 with ZipFile('output.cddx', mode='w') as zf:
