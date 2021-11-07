@@ -441,11 +441,6 @@ for line in vertical:
 
 
 # finding components
-solo_ep_HL = []
-solo_ep_HR = []
-solo_ep_VT = []
-solo_ep_VB = []
-
 components = []
 component_endpoints = []
 compCount = 0
@@ -453,6 +448,7 @@ compCount = 0
 # horizontal components
 for hr in ep_HR:
     hlc = compCount
+
     while (hlc < len(ep_HL) and
         (
             ep_HL[hlc].y > hr.y + COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH/2 or
@@ -472,12 +468,6 @@ for hr in ep_HR:
         
         ep_HL[compCount], ep_HL[hlc] = ep_HL[hlc], ep_HL[compCount]
         compCount += 1
-    else:
-        solo_ep_HR.append(hr)
-
-for i in range(compCount, len(ep_HL)):
-    solo_ep_HL.append(ep_HL[i])
-    
 
 # vertical components
 compCount = 0
@@ -504,11 +494,6 @@ for vb in ep_VB:
         
         ep_VT[compCount], ep_VT[vtc] = ep_VT[vtc], ep_VT[compCount]
         compCount += 1
-    else:
-        solo_ep_VB.append(vb)
-
-for i in range(compCount, len(ep_VT)):
-    solo_ep_VT.append(ep_VT[i])
 
 
 # start output file
