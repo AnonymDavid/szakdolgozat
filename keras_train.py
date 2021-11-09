@@ -1,9 +1,6 @@
-import numpy as np
-from cv2 import cv2
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers, preprocessing
-from tensorflow.python.keras.layers.preprocessing.image_preprocessing import RandomFlip
+from tensorflow.keras import layers
 
 img_height = 150
 img_width = 150
