@@ -30,6 +30,8 @@ OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = 30
 OUTPUT_SCALE = 3
 PICTURE_SCALE = 20
 
+COMPONENT_OUTPUT_SIMILARITY_THRESHOLD = OUTPUT_SCALE * 10
+
 
 # ----- TYPES -----
 class Orientation(Enum):
@@ -47,6 +49,10 @@ class Line(NamedTuple):
 class Endpoint(NamedTuple):
     point: Point
     orientation: Orientation
+class ComponentEndpoint(NamedTuple):
+    point: Point
+    horizontal_offset: int
+    vertical_offset: int
 
 
 # ----- METHODS -----
@@ -158,15 +164,15 @@ def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, 
     compEpCount = 0
     lineCompSide = -1
     while compEpCount < len(component_endpoints) and lineCompSide == -1:
-        if isSamePoint(line.p1, component_endpoints[compEpCount], POINT_SIMILARITY_COMPARE_AREA_RADIUS):
+        if isSamePoint(line.p1, component_endpoints[compEpCount].point, POINT_SIMILARITY_COMPARE_AREA_RADIUS):
             lineCompSide = 0
-        elif isSamePoint(line.p2, component_endpoints[compEpCount], POINT_SIMILARITY_COMPARE_AREA_RADIUS):
+        elif isSamePoint(line.p2, component_endpoints[compEpCount].point, POINT_SIMILARITY_COMPARE_AREA_RADIUS):
             lineCompSide = 1
         else:
             compEpCount += 1
     
     if compEpCount < len(component_endpoints):
-        lineTemp[lineCompSide] = [int(round(component_endpoints[compEpCount].x/OUTPUT_SCALE, -1)), int(round(component_endpoints[compEpCount].y/OUTPUT_SCALE, -1))]
+        lineTemp[lineCompSide] = [int(round((component_endpoints[compEpCount].point.x + component_endpoints[compEpCount].horizontal_offset)/OUTPUT_SCALE, -1)), int(round((component_endpoints[compEpCount].point.y + component_endpoints[compEpCount].vertical_offset)/OUTPUT_SCALE, -1))]
     
     if lineIdx < horizontalCount:
         closestInterestDiff = 1000
@@ -462,9 +468,23 @@ for hr in ep_HR:
         compSize = ep_HL[hlc].x - hr.x
         if compSize < COMPONENT_MIN_BOX_SIZE:
             compSize = COMPONENT_MIN_BOX_SIZE
-        components.append([Point(hr.x - COMPONENT_BOX_SIZE_OFFSET, hr.y - round(compSize/2)), Point(ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET, ep_HL[hlc].y + round(compSize / 2)), Orientation.HORIZONTAL, Point(hr.x, hr.y), Point(ep_HL[hlc].x, ep_HL[hlc].y)])
-        component_endpoints.append(Point(hr.x, hr.y))
-        component_endpoints.append(Point(ep_HL[hlc].x, hr.y))
+
+        closestComponentDiff = 1000
+        for cc in range(len(components)):
+            if components[cc][2] == Orientation.HORIZONTAL:
+                componentDiff = abs(components[cc][3].y - hr.y)
+                if componentDiff < closestComponentDiff:
+                    closestComponentDiff = componentDiff
+                    closestComponentPos = components[cc][3].y
+        
+        if closestComponentDiff < COMPONENT_OUTPUT_SIMILARITY_THRESHOLD:
+            componentOutputOffset = closestComponentDiff * (1 if closestComponentPos > hr.y else (-1))
+        else:
+            componentOutputOffset = 0
+
+        components.append([Point(hr.x - COMPONENT_BOX_SIZE_OFFSET, hr.y - round(compSize/2)), Point(ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET, ep_HL[hlc].y + round(compSize / 2)), Orientation.HORIZONTAL, Point(hr.x, hr.y), Point(ep_HL[hlc].x, ep_HL[hlc].y), componentOutputOffset])
+        component_endpoints.append(ComponentEndpoint(Point(hr.x, hr.y), 0, componentOutputOffset))
+        component_endpoints.append(ComponentEndpoint(Point(ep_HL[hlc].x, hr.y), 0, componentOutputOffset))
         
         ep_HL[compCount], ep_HL[hlc] = ep_HL[hlc], ep_HL[compCount]
         compCount += 1
@@ -487,10 +507,24 @@ for vb in ep_VB:
         compSize = ep_VT[vtc].y - vb.y
         if compSize < COMPONENT_MIN_BOX_SIZE:
             compSize = COMPONENT_MIN_BOX_SIZE
+
+        closestComponentDiff = 1000
+        for cc in range(len(components)):
+            if components[cc][2] == Orientation.VERTICAL:
+                componentDiff = abs(components[cc][3].x - vb.x)
+                if componentDiff < closestComponentDiff:
+                    closestComponentDiff = componentDiff
+                    closestComponentPos = components[cc][3].x
         
-        components.append([Point(vb.x - round(compSize/2), vb.y - COMPONENT_BOX_SIZE_OFFSET), Point(ep_VT[vtc].x + round(compSize / 2), ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET), Orientation.VERTICAL, Point(vb.x, vb.y), Point(ep_VT[vtc].x, ep_VT[vtc].y)])
-        component_endpoints.append(Point(vb.x, vb.y))
-        component_endpoints.append(Point(vb.x, ep_VT[vtc].y))
+        if closestComponentDiff < COMPONENT_OUTPUT_SIMILARITY_THRESHOLD:
+            componentOutputOffset = closestComponentDiff * (1 if closestComponentPos > vb.x else (-1))
+            print(closestComponentDiff)
+        else:
+            componentOutputOffset = 0
+        
+        components.append([Point(vb.x - round(compSize/2), vb.y - COMPONENT_BOX_SIZE_OFFSET), Point(ep_VT[vtc].x + round(compSize / 2), ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET), Orientation.VERTICAL, Point(vb.x, vb.y), Point(ep_VT[vtc].x, ep_VT[vtc].y), componentOutputOffset])
+        component_endpoints.append(ComponentEndpoint(Point(vb.x, vb.y), componentOutputOffset, 0))
+        component_endpoints.append(ComponentEndpoint(Point(vb.x, ep_VT[vtc].y), componentOutputOffset, 0))
         
         ep_VT[compCount], ep_VT[vtc] = ep_VT[vtc], ep_VT[compCount]
         compCount += 1
@@ -530,9 +564,16 @@ for c in components:
     cv2.rectangle(img, (c[0][0], c[0][1]), (c[1][0], c[1][1]), (0,0,255), 5)
 
     componentImg = thresh[c[0][1]:c[1][1], c[0][0]:c[1][0]]
-    
+
+    componentVerticalOffset = 0
+    componentHorizontalOffset = 0
+
     if c[2] == Orientation.VERTICAL:
         componentImg = imutils.rotate_bound(componentImg, -90)
+
+        componentHorizontalOffset = c[5]
+    else:
+        componentVerticalOffset = c[5]
     
     componentImg = cv2.resize(componentImg, dsize=(150,150), interpolation=cv2.INTER_CUBIC)
     componentImg = componentImg.reshape(-1, 150, 150, 1)
@@ -549,8 +590,8 @@ for c in components:
     if prediction[0][np.argmax(prediction[0])] > bestPredictionValue:
         bestPrediction = np.argmax(prediction[0])
         flipped = True
-        
-    compOutputPos = Point(int(round(c[3][0]/OUTPUT_SCALE - outputOffset[0], -1)), int(round(c[3][1]/OUTPUT_SCALE - outputOffset[1], -1)))
+    
+    compOutputPos = Point(int(round((c[3][0] + componentHorizontalOffset)/OUTPUT_SCALE - outputOffset[0], -1)), int(round((c[3][1] + componentVerticalOffset)/OUTPUT_SCALE - outputOffset[1], -1)))
     compOutputSize = int(round((abs(c[4][0]/OUTPUT_SCALE - c[3][0]/OUTPUT_SCALE) if c[2] == Orientation.HORIZONTAL else abs(c[4][1]/OUTPUT_SCALE - c[3][1]/OUTPUT_SCALE)), -1))
 
     if bestPrediction == 0:
