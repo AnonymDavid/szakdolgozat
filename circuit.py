@@ -6,7 +6,9 @@ import math
 import imutils
 import sys
 import os.path
+from datetime import datetime
 from zipfile import ZipFile
+from numpy.core.numeric import count_nonzero
 
 from tensorflow import keras
 
@@ -25,6 +27,7 @@ COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = 350
 COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = 16
 COMPONENT_MIN_BOX_SIZE = 200
 COMPONENT_BOX_SIZE_OFFSET = 60
+COMPONENT_PIXELS_THRESHOLD_PERCENTAGE = 6
 PERSPECTIVE_IMAGE_OFFSET = 200
 OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = 30
 OUTPUT_SCALE = 3
@@ -482,12 +485,18 @@ for hr in ep_HR:
         else:
             componentOutputOffset = 0
 
-        components.append([Point(hr.x - COMPONENT_BOX_SIZE_OFFSET, hr.y - round(compSize/2)), Point(ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET, ep_HL[hlc].y + round(compSize / 2)), Orientation.HORIZONTAL, Point(hr.x, hr.y), Point(ep_HL[hlc].x, ep_HL[hlc].y), componentOutputOffset])
-        component_endpoints.append(ComponentEndpoint(Point(hr.x, hr.y), 0, componentOutputOffset))
-        component_endpoints.append(ComponentEndpoint(Point(ep_HL[hlc].x, hr.y), 0, componentOutputOffset))
+        componentPosTL = Point(hr.x - COMPONENT_BOX_SIZE_OFFSET, hr.y - round(compSize/2))
+        componentPosBR = Point(ep_HL[hlc].x + COMPONENT_BOX_SIZE_OFFSET, ep_HL[hlc].y + round(compSize / 2))
+
+        componentPic = thresh[componentPosTL.y:componentPosBR.y, componentPosTL.x:componentPosBR.x]
         
-        ep_HL[compCount], ep_HL[hlc] = ep_HL[hlc], ep_HL[compCount]
-        compCount += 1
+        if cv2.countNonZero(componentPic) / (componentPic.shape[0]*componentPic.shape[1]) >= COMPONENT_PIXELS_THRESHOLD_PERCENTAGE / 100:
+            components.append([componentPosTL, componentPosBR, Orientation.HORIZONTAL, Point(hr.x, hr.y), Point(ep_HL[hlc].x, ep_HL[hlc].y), componentOutputOffset])
+            component_endpoints.append(ComponentEndpoint(Point(hr.x, hr.y), 0, componentOutputOffset))
+            component_endpoints.append(ComponentEndpoint(Point(ep_HL[hlc].x, hr.y), 0, componentOutputOffset))
+            
+            ep_HL[compCount], ep_HL[hlc] = ep_HL[hlc], ep_HL[compCount]
+            compCount += 1
 
 # vertical components
 compCount = 0
@@ -518,16 +527,21 @@ for vb in ep_VB:
         
         if closestComponentDiff < COMPONENT_OUTPUT_SIMILARITY_THRESHOLD:
             componentOutputOffset = closestComponentDiff * (1 if closestComponentPos > vb.x else (-1))
-            print(closestComponentDiff)
         else:
             componentOutputOffset = 0
         
-        components.append([Point(vb.x - round(compSize/2), vb.y - COMPONENT_BOX_SIZE_OFFSET), Point(ep_VT[vtc].x + round(compSize / 2), ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET), Orientation.VERTICAL, Point(vb.x, vb.y), Point(ep_VT[vtc].x, ep_VT[vtc].y), componentOutputOffset])
-        component_endpoints.append(ComponentEndpoint(Point(vb.x, vb.y), componentOutputOffset, 0))
-        component_endpoints.append(ComponentEndpoint(Point(vb.x, ep_VT[vtc].y), componentOutputOffset, 0))
+        componentPosTL = Point(vb.x - round(compSize/2), vb.y - COMPONENT_BOX_SIZE_OFFSET)
+        componentPosBR = Point(ep_VT[vtc].x + round(compSize / 2), ep_VT[vtc].y + COMPONENT_BOX_SIZE_OFFSET)
+
+        componentPic = thresh[componentPosTL.y:componentPosBR.y, componentPosTL.x:componentPosBR.x]
         
-        ep_VT[compCount], ep_VT[vtc] = ep_VT[vtc], ep_VT[compCount]
-        compCount += 1
+        if cv2.countNonZero(componentPic) / (componentPic.shape[0]*componentPic.shape[1]) >= COMPONENT_PIXELS_THRESHOLD_PERCENTAGE / 100:
+            components.append([componentPosTL, componentPosBR, Orientation.VERTICAL, Point(vb.x, vb.y), Point(ep_VT[vtc].x, ep_VT[vtc].y), componentOutputOffset])
+            component_endpoints.append(ComponentEndpoint(Point(vb.x, vb.y), componentOutputOffset, 0))
+            component_endpoints.append(ComponentEndpoint(Point(vb.x, ep_VT[vtc].y), componentOutputOffset, 0))
+            
+            ep_VT[compCount], ep_VT[vtc] = ep_VT[vtc], ep_VT[compCount]
+            compCount += 1
 
 
 # start output file
@@ -786,7 +800,7 @@ file = open("output/docProps/core.xml", "w", newline='')
 file.write('\
 <?xml version="1.0" encoding="utf-8"?>\n\
 <coreProperties xmlns="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/metadata/core-properties">\n\
-	<date xmlns="http://purl.org/dc/terms/">2021-10-20 08:12:45Z</date>\n\
+	<date xmlns="http://purl.org/dc/terms/">'+str(datetime.now().strftime("%Y/%m/%d %H:%M:%S"))+'</date>\n\
 </coreProperties>\
 ')
 file.close()
@@ -805,7 +819,7 @@ with ZipFile('output.cddx', mode='w') as zf:
 
 
 cv2.imshow("img", resizeImage(img, PICTURE_SCALE))
-# cv2.imshow("thresh", resizeImage(thresh, PICTURE_SCALE))
+cv2.imshow("thresh", resizeImage(thresh, PICTURE_SCALE))
 
 t2 = time.perf_counter()
 
