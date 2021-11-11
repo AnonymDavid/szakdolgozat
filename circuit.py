@@ -819,7 +819,7 @@ with ZipFile('output.cddx', mode='w') as zf:
 
 
 cv2.imshow("img", resizeImage(img, PICTURE_SCALE))
-cv2.imshow("thresh", resizeImage(thresh, PICTURE_SCALE))
+# cv2.imshow("thresh", resizeImage(thresh, PICTURE_SCALE))
 
 t2 = time.perf_counter()
 
