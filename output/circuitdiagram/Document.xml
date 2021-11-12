@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <circuit version="1.4" xmlns="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/document">
 	<properties>
-		<width>4032</width>
-		<height>3024</height>
+		<width>3326</width>
+		<height>2481</height>
 	</properties>
 	<definitions>
 		<src col="http://schemas.circuit-diagram.org/circuitDiagramDocument/2012/components/common">
@@ -17,67 +17,14 @@
 		</src>
 	</definitions>
 	<elements>
-		<c id="0" tp="{7}" x="560" y="490" o="h" sz="70" flp="true">
-			<prs>
-				<p k="style" v="IEC" />
-				<p k="text" v="" />
-				<p k="resistance" v="1" />
-				<p k="showResistance" v="False" />
-				<p k="t" v="Standard" />
-			</prs>
-			<cns />
-		</c>
-		<c id="1" tp="{5}" x="180" y="490" o="h" sz="40" flp="true">
-			<prs>
-				<p k="t" v="Toggle" />
-				<p k="closed" v="False" />
-			</prs>
-			<cns />
-		</c>
-		<c id="2" tp="{3}" x="470" y="240" o="h" sz="80" flp="false">
-			<prs>
-				<p k="text" v="" />
-				<p k="inductance" v="0.1" />
-				<p k="showInductance" v="False" />
-			</prs>
-			<cns />
-		</c>
-		<c id="3" tp="{7}" x="160" y="240" o="h" sz="60" flp="true">
-			<prs>
-				<p k="style" v="IEC" />
-				<p k="text" v="" />
-				<p k="resistance" v="1" />
-				<p k="showResistance" v="False" />
-				<p k="t" v="Standard" />
-			</prs>
-			<cns />
-		</c>
-		<c id="4" tp="{6}" x="730" y="160" o="h" sz="10" flp="false">
-			<prs>
-				<p k="style" v="IEC" />
-				<p k="text" v="" />
-				<p k="capacitance" v="0.00000" />
-				<p k="showCapacitance" v="False" />
-				<p k="t" v="Standard" />
-			</prs>
-		<cns />
-		</c>
-		<c id="5" tp="{0}" x="720" y="20" o="h" sz="40" flp="true">
+		<c id="0" tp="{0}" x="530" y="140" o="h" sz="50" flp="true">
 			<prs>
 				<p k="t" v="Generic" />
 				<p k="islit" v="False" />
 			</prs>
 			<cns />
 		</c>
-		<c id="6" tp="{3}" x="850" y="300" o="v" sz="80" flp="false">
-			<prs>
-				<p k="text" v="" />
-				<p k="inductance" v="0.1" />
-				<p k="showInductance" v="False" />
-			</prs>
-			<cns />
-		</c>
-		<c id="7" tp="{4}" x="30" y="340" o="v" sz="30" flp="true">
+		<c id="1" tp="{4}" x="590" y="580" o="h" sz="40" flp="true">
 			<prs>
 				<p k="voltage" v="5" />
 				<p k="frequency" v="50" />
@@ -86,29 +33,93 @@
 			</prs>
 			<cns />
 		</c>
-		<c id="8" tp="{0}" x="380" y="330" o="v" sz="40" flp="false">
+		<c id="2" tp="{0}" x="530" y="270" o="h" sz="50" flp="true">
 			<prs>
 				<p k="t" v="Generic" />
 				<p k="islit" v="False" />
 			</prs>
 			<cns />
 		</c>
-<w x="630" y="490" o="h" sz="220" flp="false" />
-<w x="850" y="390" o="v" sz="100" flp="false" />
-<w x="220" y="490" o="h" sz="340" flp="false" />
-<w x="30" y="490" o="h" sz="150" flp="false" />
-<w x="30" y="360" o="v" sz="130" flp="false" />
-<w x="230" y="240" o="h" sz="240" flp="false" />
-<w x="550" y="240" o="h" sz="100" flp="false" />
-<w x="650" y="20" o="v" sz="220" flp="false" />
-<w x="650" y="20" o="h" sz="70" flp="false" />
-<w x="30" y="240" o="h" sz="130" flp="false" />
-<w x="30" y="240" o="v" sz="100" flp="false" />
-<w x="740" y="160" o="h" sz="110" flp="false" />
-<w x="650" y="160" o="h" sz="80" flp="false" />
-<w x="750" y="20" o="h" sz="100" flp="false" />
-<w x="850" y="20" o="v" sz="280" flp="false" />
-<w x="380" y="240" o="v" sz="90" flp="false" />
-<w x="380" y="370" o="v" sz="120" flp="false" />
+		<c id="3" tp="{0}" x="520" y="20" o="h" sz="50" flp="true">
+			<prs>
+				<p k="t" v="Generic" />
+				<p k="islit" v="False" />
+			</prs>
+			<cns />
+		</c>
+		<c id="4" tp="{7}" x="260" y="20" o="h" sz="80" flp="true">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="1" />
+				<p k="showResistance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns />
+		</c>
+		<c id="5" tp="{7}" x="270" y="270" o="h" sz="80" flp="true">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="1" />
+				<p k="showResistance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns />
+		</c>
+		<c id="6" tp="{5}" x="330" y="580" o="h" sz="50" flp="false">
+			<prs>
+				<p k="t" v="Toggle" />
+				<p k="closed" v="False" />
+			</prs>
+			<cns />
+		</c>
+		<c id="7" tp="{7}" x="270" y="140" o="h" sz="80" flp="true">
+			<prs>
+				<p k="style" v="IEC" />
+				<p k="text" v="" />
+				<p k="resistance" v="1" />
+				<p k="showResistance" v="False" />
+				<p k="t" v="Standard" />
+			</prs>
+			<cns />
+		</c>
+		<c id="8" tp="{1}" x="20" y="380" o="v" sz="50" flp="false">
+			<prs>
+				<p k="voltage" v="1" />
+				<p k="frequency" v="1" />
+				<p k="showvoltage" v="True" />
+				<p k="t" v="AC" />
+			</prs>
+			<cns />
+		</c>
+		<c id="9" tp="{3}" x="170" y="360" o="v" sz="100" flp="false">
+			<prs>
+				<p k="text" v="" />
+				<p k="inductance" v="0.1" />
+				<p k="showInductance" v="False" />
+			</prs>
+			<cns />
+		</c>
+<w x="350" y="140" o="h" sz="180" flp="false" />
+<w x="570" y="140" o="h" sz="180" flp="false" />
+<w x="630" y="580" o="h" sz="140" flp="false" />
+<w x="380" y="580" o="h" sz="210" flp="false" />
+<w x="350" y="270" o="h" sz="180" flp="false" />
+<w x="580" y="270" o="h" sz="180" flp="false" />
+<w x="340" y="20" o="h" sz="180" flp="false" />
+<w x="570" y="20" o="h" sz="170" flp="false" />
+<w x="20" y="20" o="h" sz="240" flp="false" />
+<w x="20" y="20" o="v" sz="120" flp="false" />
+<w x="20" y="140" o="h" sz="250" flp="false" />
+<w x="20" y="140" o="v" sz="130" flp="false" />
+<w x="20" y="270" o="h" sz="250" flp="false" />
+<w x="20" y="270" o="v" sz="110" flp="false" />
+<w x="20" y="580" o="h" sz="310" flp="false" />
+<w x="20" y="420" o="v" sz="160" flp="false" />
+<w x="170" y="270" o="v" sz="90" flp="false" />
+<w x="170" y="460" o="v" sz="120" flp="false" />
+<w x="740" y="50" o="v" sz="50" flp="false" />
+<w x="760" y="440" o="v" sz="40" flp="false" />
 	</elements>
 </circuit>

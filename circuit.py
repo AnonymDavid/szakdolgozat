@@ -19,7 +19,7 @@ POINT_SIMILARITY_COMPARE_AREA_RADIUS = 15
 LINE_MIN_LENGTH = 90
 LINE_PERSPECTIVE_MIN_LENGTH = 200
 LINE_COUNT_CHECK_FOR_ROTATION = 10
-LINE_SEARCH_ANGLE_THRESHOLD = 5 # degrees, both ways
+LINE_SEARCH_ANGLE_THRESHOLD = 5
 LINE_CHECK_SIMILARITY_THRESHOLD = 15
 LINE_AGGREGATION_SIMILARITY_THRESHOLD = 25
 COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = 50
@@ -135,24 +135,27 @@ def getIntersection(line1, line2):
     return Point(round(px), round(py))
 
 def putOnCanvas(image, imgPercent):
-    if len(image.shape) == 3:
-        canvas = np.zeros((image.shape[0], image.shape[1], image.shape[2]), dtype='uint8')
-    else:
-        canvas = np.zeros((image.shape[0], image.shape[1]), dtype='uint8')
+    if imgPercent < 100:
+        if len(image.shape) == 3:
+            canvas = np.zeros((image.shape[0], image.shape[1], image.shape[2]), dtype='uint8')
+        else:
+            canvas = np.zeros((image.shape[0], image.shape[1]), dtype='uint8')
 
-    image = resizeImage(image, imgPercent)
+        image = resizeImage(image, imgPercent)
 
-    offsetX = round((canvas.shape[1] - image.shape[1]) / 2)
-    offsetY = round((canvas.shape[0] - image.shape[0]) / 2)
+        offsetX = round((canvas.shape[1] - image.shape[1]) / 2)
+        offsetY = round((canvas.shape[0] - image.shape[0]) / 2)
 
-    x1 = offsetX
-    x2 = offsetX + image.shape[1]
-    y1 = offsetY
-    y2 = offsetY + image.shape[0]
+        x1 = offsetX
+        x2 = offsetX + image.shape[1]
+        y1 = offsetY
+        y2 = offsetY + image.shape[0]
 
-    canvas[y1:y2, x1:x2] = image
+        canvas[y1:y2, x1:x2] = image
 
-    return canvas
+        return canvas
+    elif imgPercent > 100:
+        return resizeImage(image, imgPercent)
 
 
 def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, outputLines, horizontalCount):
@@ -272,25 +275,13 @@ thresh = 255 - thresh
 thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)))
 
 if len(sys.argv) > 2:
-    if 5 < int(sys.argv[2]) or int(sys.argv[2]) < 0:
-        exit("Canvas number is out of range! The number must be between 0 and 5!")
+    if 5 < int(sys.argv[2]) or int(sys.argv[2]) < -5:
+        exit("Canvas number is out of range! The number must be an integer between -5 and 5!")
     
     img = putOnCanvas(img, 100 - int(sys.argv[2]) * 10)
     thresh = putOnCanvas(thresh, 100 - int(sys.argv[2]) * 10)
 
 biggerSide = img.shape[0] if img.shape[0] > img.shape[1] else img.shape[1]
-
-POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.00375)
-LINE_MIN_LENGTH = round(biggerSide*0.0225)
-LINE_PERSPECTIVE_MIN_LENGTH = round(biggerSide*0.03)
-LINE_CHECK_SIMILARITY_THRESHOLD = round(biggerSide*0.00375)
-COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = round(biggerSide*0.0125)
-COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = round(biggerSide*0.0875)
-COMPONENT_MIN_BOX_SIZE = round(biggerSide*0.05)
-COMPONENT_BOX_SIZE_OFFSET = round(biggerSide*0.015)
-PERSPECTIVE_IMAGE_OFFSET = round(biggerSide*0.13)
-OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.0075)
-
 
 # tilt image for bird's eye view
 canny = cv2.Canny(thresh, 100, 150)
