@@ -16,7 +16,7 @@ import time
 
 # ----- CONSTANTS -----
 POINT_SIMILARITY_COMPARE_AREA_RADIUS = 15
-LINE_MIN_LENGTH = 90
+LINE_MIN_LENGTH = 95
 LINE_PERSPECTIVE_MIN_LENGTH = 200
 LINE_COUNT_CHECK_FOR_ROTATION = 10
 LINE_SEARCH_ANGLE_THRESHOLD = 5
@@ -28,7 +28,7 @@ COMPONENT_OTHER_ENDPOINT_SEARCH_MIN_LENGTH = 16
 COMPONENT_MIN_BOX_SIZE = 200
 COMPONENT_BOX_SIZE_OFFSET = 60
 COMPONENT_PIXELS_THRESHOLD_PERCENTAGE = 6
-PERSPECTIVE_IMAGE_OFFSET = 200
+PERSPECTIVE_IMAGE_OFFSET = 500
 OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = 30
 OUTPUT_SCALE = 3
 PICTURE_SCALE = 20
@@ -283,6 +283,17 @@ if len(sys.argv) > 2:
 
 biggerSide = img.shape[0] if img.shape[0] > img.shape[1] else img.shape[1]
 
+POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.00375)
+LINE_MIN_LENGTH = round(biggerSide*0.0225)
+LINE_PERSPECTIVE_MIN_LENGTH = round(biggerSide*0.03)
+LINE_CHECK_SIMILARITY_THRESHOLD = round(biggerSide*0.00375)
+COMPONENT_OTHER_ENDPOINT_SEARCH_WIDTH = round(biggerSide*0.0125)
+COMPONENT_OTHER_ENDPOINT_SEARCH_MAX_LENGTH = round(biggerSide*0.0875)
+COMPONENT_MIN_BOX_SIZE = round(biggerSide*0.05)
+COMPONENT_BOX_SIZE_OFFSET = round(biggerSide*0.015)
+PERSPECTIVE_IMAGE_OFFSET = round(biggerSide*0.13)
+OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.0075)
+
 # tilt image for bird's eye view
 canny = cv2.Canny(thresh, 100, 150)
 canny = cv2.dilate(canny, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)))
@@ -437,7 +448,6 @@ for line in vertical:
     else:
         ep_VT.append(line.p2)
         ep_VB.append(line.p1)
-
 
 
 # finding components
