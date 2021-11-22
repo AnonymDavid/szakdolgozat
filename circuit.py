@@ -156,6 +156,8 @@ def putOnCanvas(image, imgPercent):
         return canvas
     elif imgPercent > 100:
         return resizeImage(image, imgPercent)
+    else:
+        return image
 
 
 def followLine(lines, lineIdx, otherSideIdx, component_endpoints, checkedLines, outputLines, horizontalCount):
