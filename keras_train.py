@@ -58,15 +58,15 @@ model = keras.Sequential([
     layers.Dense(64, activation='relu'),
     layers.Dense(comp_count),
 ])
+data_augmentation.summary()
+# model.compile(
+#     optimizer=keras.optimizers.Adam(),
+#     loss=[
+#         keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+#     ],
+#     metrics=["accuracy"],
+# )
 
-model.compile(
-    optimizer=keras.optimizers.Adam(),
-    loss=[
-        keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-    ],
-    metrics=["accuracy"],
-)
+# model.fit(ds_train, validation_data=ds_valid, epochs=40, verbose=2)
 
-model.fit(ds_train, validation_data=ds_valid, epochs=40, verbose=2)
-
-model.save("symbolsModel.h5")
+# model.save("symbolsModel.h5")

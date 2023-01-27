@@ -1,3 +1,6 @@
+import os, psutil
+
+print("Used memory 0000000: ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
 import numpy as np
 import cv2
 from typing import List, NamedTuple
@@ -9,7 +12,6 @@ import os.path
 from datetime import datetime
 from zipfile import ZipFile
 from numpy.core.numeric import count_nonzero
-
 from tensorflow import keras
 
 import time
@@ -253,8 +255,11 @@ def createDirectoryTree():
 
 # ----- MAIN -----
 
+# usage example:
+# python circuit.py circuits/tests/1.jpg 3
 
 # load in CNN model
+print("\n\nUsed memory INIT: ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2, "\n")
 model = keras.models.load_model("symbolsModel.h5")
 
 t1 = time.perf_counter()
@@ -295,6 +300,11 @@ COMPONENT_MIN_BOX_SIZE = round(biggerSide*0.05)
 COMPONENT_BOX_SIZE_OFFSET = round(biggerSide*0.015)
 PERSPECTIVE_IMAGE_OFFSET = round(biggerSide*0.13)
 OUTPUT_POINT_SIMILARITY_COMPARE_AREA_RADIUS = round(biggerSide*0.0075)
+
+t2 = time.perf_counter()
+
+print(f"\nProcessing time (before birds-eye view): {t2 - t1:0.4f} seconds")
+print("Used memory: ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
 
 # tilt image for bird's eye view
 canny = cv2.Canny(thresh, 100, 150)
@@ -370,6 +380,11 @@ for cnt in contours:
 
 outputOffset = [int(round((x-50)/OUTPUT_SCALE, -1)), int(round((y-50)/OUTPUT_SCALE, -1))]
 
+t2 = time.perf_counter()
+
+print(f"\nProcessing time (pre-processing): {t2 - t1:0.4f} seconds")
+print("Used memory: ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
+
 
 # finding connection lines
 linesP = list(cv2.HoughLinesP(thresh, 1, np.pi/180, LINE_MIN_LENGTH, None, LINE_MIN_LENGTH, 0))
@@ -427,7 +442,10 @@ for line in linesP:
             vertical.append(line)
 
 lines = horizontal + vertical
+t2 = time.perf_counter()
 
+print(f"\nProcessing time (separating lines): {t2 - t1:0.4f} seconds")
+print("Used memory: ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
 
 # finding and separating line endpoints
 ep_HL = []
@@ -545,7 +563,10 @@ for vb in ep_VB:
             
             ep_VT[compCount], ep_VT[vtc] = ep_VT[vtc], ep_VT[compCount]
             compCount += 1
+t2 = time.perf_counter()
 
+print(f"\nProcessing time (found components): {t2 - t1:0.4f} seconds")
+print("Used memory: ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
 
 # start output file
 createDirectoryTree()
@@ -715,6 +736,10 @@ for c in components:
 
     componentId += 1
 
+t2 = time.perf_counter()
+
+print(f"\nProcessing time (categorized comps): {t2 - t1:0.4f} seconds")
+print("Used memory: ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
 
 # Find lines for output (starting from component endpoints)
 checkedLines = []
@@ -827,5 +852,6 @@ cv2.imshow("img", resizeImage(img, PICTURE_SCALE))
 t2 = time.perf_counter()
 
 print(f"\nProcessing time: {t2 - t1:0.4f} seconds")
+print("Used memory: ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
 
 cv2.waitKey(0)
